@@ -101,15 +101,16 @@ st.markdown(
     f"""
     <div class="hero">
         <img class="hero-logo" src="data:image/png;base64,{APP_ICON_BASE64}" alt="中古住宅・中古物件の価格相場を調べる お買い得物件チェッカー">
-        <div class="hero-copy">
-            <div class="hero-badge">不動産・中古住宅の価格相場を、かんたんチェック</div>
-            <h1 class="hero-title">中古住宅・中古物件の価格相場チェック｜お買い得物件チェッカー</h1>
-            <div class="hero-subtitle">
-                中古住宅・中古物件・中古マンション・一戸建ての物件価格をチェック。<br>
-                比較データから価格相場・参考価格を算出し、割安物件・お買い得物件かを確認できます。<br>
-                不動産購入時の価格査定・相場チェックの参考にも利用できます。
-            </div>
-        </div>
+       <div class="hero-copy">
+    <div class="hero-badge">不動産・中古住宅の価格相場を、かんたんチェック</div>
+    <h1 class="hero-title">中古住宅・中古物件の価格相場チェック｜お買い得物件チェッカー</h1>
+    <div class="hero-subtitle">
+        中古住宅・中古物件・中古マンション・一戸建ての物件価格をチェック。<br>
+        比較データから価格相場・参考価格を算出し、割安物件・お買い得物件かを確認できます。<br>
+        不動産購入時の価格査定・相場チェックの参考にも利用できます。
+    </div>
+    <h2>中古住宅・中古マンション・一戸建ての価格相場をチェック</h2>
+</div>
     </div>
     <div class="steps">
         <div class="step"><div class="step-no">STEP 1</div><div class="step-title">比較データを読み込む</div><div class="step-text">中古住宅・中古物件などの価格相場を比較する基準に使います。</div></div>

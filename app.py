@@ -16,7 +16,20 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+st.html(
+    """
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-4DZ00D4915"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
 
+      gtag('config', 'G-4DZ00D4915');
+    </script>
+    """,
+    unsafe_allow_javascript=True,
+)
 
 # =========================================================
 # デザイン

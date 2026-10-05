@@ -1,4 +1,7 @@
 import re
+import os
+import json
+from datetime import datetime
 import base64
 import requests
 import pandas as pd
@@ -126,13 +129,361 @@ st.markdown(
 </div>
     </div>
     <div class="steps">
-        <div class="step"><div class="step-no">STEP 1</div><div class="step-title">比較データを読み込む</div><div class="step-text">中古住宅・中古物件などの価格相場を比較する基準に使います。</div></div>
-        <div class="step"><div class="step-no">STEP 2</div><div class="step-title">物件を入力する</div><div class="step-text">中古マンション・一戸建てなどを1件入力、またはExcel・CSVでまとめて確認できます。</div></div>
-        <div class="step"><div class="step-no">STEP 3</div><div class="step-title">物件価格をチェック</div><div class="step-text">参考価格と価格相場を比較して、お買い得度を確認します。</div></div>
+        <a href="#step1-data" style="text-decoration:none;color:inherit;display:block;">
+            <div class="step" style="cursor:pointer;height:100%;">
+                <div class="step-no">STEP 1</div>
+                <div class="step-title">比較データを読み込む</div>
+                <div class="step-text">中古住宅・中古物件などの価格相場を比較する基準に使います。</div>
+            </div>
+        </a>
+        <a href="#step2-input" style="text-decoration:none;color:inherit;display:block;">
+            <div class="step" style="cursor:pointer;height:100%;">
+                <div class="step-no">STEP 2</div>
+                <div class="step-title">物件を入力する</div>
+                <div class="step-text">中古マンション・一戸建てなどを1件入力、またはExcel・CSVでまとめて確認できます。</div>
+            </div>
+        </a>
+        <a href="#step3-check" style="text-decoration:none;color:inherit;display:block;">
+            <div class="step" style="cursor:pointer;height:100%;">
+                <div class="step-no">STEP 3</div>
+                <div class="step-title">物件価格をチェック</div>
+                <div class="step-text">参考価格と価格相場を比較して、お買い得度を確認します。</div>
+            </div>
+        </a>
     </div>
     """,
     unsafe_allow_html=True
 )
+# =========================================================
+# 将来API・AI対応の共通データ設計
+# =========================================================
+# どの取得元（手入力 / URL / 国交省API / 将来の正式データ提供）でも、
+# 最終的にこの項目名へ揃えてから価格判定へ渡します。
+
+PROPERTY_TYPES = [
+    "新築戸建て", "中古戸建て", "新築マンション", "中古マンション",
+    "賃貸・借家", "アパート・収益物件", "その他"
+]
+
+COMMON_PROPERTY_FIELDS = [
+    "物件ID", "物件名", "物件種別", "価格", "住所", "都道府県", "市区町村",
+    "土地面積", "建物面積", "専有面積", "面積", "築年月", "築年", "間取り", "構造",
+    "最寄り駅", "駅徒歩分", "用途地域", "接道", "住宅メーカー", "施工会社",
+    "取引年月", "取引時地価", "現在地価", "緯度", "経度", "データ元", "元URL",
+    "取得日時", "新築中古区分", "入居状況", "賃料", "年間収入", "管理費", "修繕積立金"
+]
+
+ML_FEATURE_FIELDS = [
+    "物件種別", "価格", "都道府県", "市区町村", "土地面積", "建物面積", "専有面積",
+    "築年", "間取り", "構造", "駅徒歩分", "用途地域", "接道", "住宅メーカー",
+    "取引年月", "取引時地価", "現在地価", "新築中古区分", "賃料", "年間収入",
+    "管理費", "修繕積立金"
+]
+
+
+def blank_property_record():
+    """欠損を許容した共通物件レコードを作る。"""
+    return {field: None for field in COMMON_PROPERTY_FIELDS}
+
+
+def canonical_property_type(value):
+    """取得元ごとの物件種別表記を共通分類へ寄せる。"""
+    text = "" if value is None else str(value).strip()
+    if not text:
+        return "その他"
+    if "マンション" in text:
+        return "新築マンション" if "新築" in text else "中古マンション"
+    if any(word in text for word in ["アパート", "一棟", "収益", "投資"]):
+        return "アパート・収益物件"
+    if any(word in text for word in ["賃貸", "借家"]):
+        return "賃貸・借家"
+    if any(word in text for word in ["戸建", "一戸建"]):
+        return "新築戸建て" if "新築" in text else "中古戸建て"
+    return text if text in PROPERTY_TYPES else "その他"
+
+
+def choose_analysis_area(record):
+    """物件種別に応じて価格比較に使う面積を選ぶ。"""
+    ptype = canonical_property_type(record.get("物件種別"))
+    candidates = ["面積"]
+    if "マンション" in ptype:
+        candidates = ["専有面積", "面積", "建物面積"]
+    elif "戸建て" in ptype or "収益" in ptype or "賃貸" in ptype:
+        candidates = ["建物面積", "面積", "専有面積", "土地面積"]
+    for key in candidates:
+        value = pd.to_numeric(pd.Series([record.get(key)]), errors="coerce").iloc[0]
+        if not pd.isna(value) and float(value) > 0:
+            return float(value)
+    return None
+
+
+def normalize_property_record(raw, source="manual", source_url=None):
+    """任意の取得元データを共通スキーマへ変換する。"""
+    record = blank_property_record()
+    if raw:
+        for key, value in dict(raw).items():
+            if key in record:
+                record[key] = value
+    record["物件種別"] = canonical_property_type(record.get("物件種別"))
+    if not record.get("面積"):
+        record["面積"] = choose_analysis_area(record)
+    record["データ元"] = source
+    record["元URL"] = source_url
+    record["取得日時"] = datetime.now().isoformat(timespec="seconds")
+    return record
+
+
+def normalize_property_dataframe(df, source="file"):
+    """Excel/CSV/APIの表を共通列へ揃える。未知の列は残す。"""
+    result = normalize_company_columns(df)
+    if "物件種別" in result.columns:
+        result["物件種別"] = result["物件種別"].apply(canonical_property_type)
+    if "データ元" not in result.columns:
+        result["データ元"] = source
+    if "取得日時" not in result.columns:
+        result["取得日時"] = datetime.now().isoformat(timespec="seconds")
+    return result
+
+
+def build_ml_training_dataframe(df):
+    """将来の機械学習へそのまま渡しやすい列順に整える。"""
+    work = normalize_property_dataframe(df, source="training")
+    for field in ML_FEATURE_FIELDS:
+        if field not in work.columns:
+            work[field] = pd.NA
+    return work[ML_FEATURE_FIELDS].copy()
+
+
+# =========================================================
+# 国土交通省 不動産情報ライブラリ API
+# =========================================================
+# XIT001: 不動産価格（取引価格・成約価格）情報取得API
+# XIT002: 都道府県内市区町村一覧取得API
+# APIキーはコードへ直書きせず、Streamlit Secrets の MLIT_API_KEY から取得します。
+
+MLIT_API_ENABLED = True
+MLIT_API_BASE_URL = "https://www.reinfolib.mlit.go.jp/ex-api/external/XIT001"
+MLIT_CITY_API_URL = "https://www.reinfolib.mlit.go.jp/ex-api/external/XIT002"
+
+PREFECTURE_CODES = {
+    "北海道": "01", "青森県": "02", "岩手県": "03", "宮城県": "04", "秋田県": "05",
+    "山形県": "06", "福島県": "07", "茨城県": "08", "栃木県": "09", "群馬県": "10",
+    "埼玉県": "11", "千葉県": "12", "東京都": "13", "神奈川県": "14", "新潟県": "15",
+    "富山県": "16", "石川県": "17", "福井県": "18", "山梨県": "19", "長野県": "20",
+    "岐阜県": "21", "静岡県": "22", "愛知県": "23", "三重県": "24", "滋賀県": "25",
+    "京都府": "26", "大阪府": "27", "兵庫県": "28", "奈良県": "29", "和歌山県": "30",
+    "鳥取県": "31", "島根県": "32", "岡山県": "33", "広島県": "34", "山口県": "35",
+    "徳島県": "36", "香川県": "37", "愛媛県": "38", "高知県": "39", "福岡県": "40",
+    "佐賀県": "41", "長崎県": "42", "熊本県": "43", "大分県": "44", "宮崎県": "45",
+    "鹿児島県": "46", "沖縄県": "47"
+}
+
+
+def get_mlit_api_key():
+    """Streamlit Secretsを優先し、ローカル環境変数も予備として使う。"""
+    secret_value = ""
+    try:
+        secret_value = str(st.secrets.get("MLIT_API_KEY", "")).strip()
+    except Exception:
+        secret_value = ""
+    return secret_value or os.getenv("MLIT_API_KEY", "").strip()
+
+
+def _mlit_headers():
+    api_key = get_mlit_api_key()
+    if not api_key:
+        raise RuntimeError(
+            "MLIT_API_KEY が見つかりません。Streamlit Community Cloud の Secrets に登録してください。"
+        )
+    return {
+        "Ocp-Apim-Subscription-Key": api_key,
+        "Accept": "application/json"
+    }
+
+
+def _to_number(value):
+    if value is None:
+        return None
+    text = str(value).replace(",", "").strip()
+    if not text:
+        return None
+    number = pd.to_numeric(pd.Series([text]), errors="coerce").iloc[0]
+    return None if pd.isna(number) else float(number)
+
+
+def _year_from_text(value):
+    if value is None:
+        return None
+    match = re.search(r"(19\d{2}|20\d{2})", str(value))
+    return int(match.group(1)) if match else None
+
+
+def _mlit_property_type(row):
+    """XIT001の取引種類をアプリ共通の物件種別へ寄せる。"""
+    type_text = str(row.get("Type") or "").strip()
+    use_text = str(row.get("Use") or "").strip()
+
+    if "マンション" in type_text:
+        return "中古マンション"
+
+    if "土地と建物" in type_text:
+        # 明確に非住宅用途だけのものは戸建て比較から外す。
+        non_residential_words = ["事務所", "店舗", "工場", "倉庫", "駐車場", "作業場"]
+        if use_text and "住宅" not in use_text and any(word in use_text for word in non_residential_words):
+            return "その他"
+
+        building_year = _year_from_text(row.get("BuildingYear"))
+        trade_year = _year_from_text(row.get("Period"))
+        if building_year and trade_year and 0 <= trade_year - building_year <= 1:
+            return "新築戸建て"
+        return "中古戸建て"
+
+    return "その他"
+
+
+def convert_mlit_rows_to_dataframe(rows):
+    """XIT001のJSON配列を価格チェック用の共通列へ変換する。"""
+    records = []
+
+    for index, row in enumerate(rows or []):
+        price_yen = _to_number(row.get("TradePrice"))
+        land_or_unit_area = _to_number(row.get("Area"))
+        total_floor_area = _to_number(row.get("TotalFloorArea"))
+        property_type = _mlit_property_type(row)
+        prefecture = str(row.get("Prefecture") or "").strip()
+        municipality = str(row.get("Municipality") or "").strip()
+        district = str(row.get("DistrictName") or "").strip()
+        address = f"{prefecture}{municipality}{district}".strip()
+        building_year = _year_from_text(row.get("BuildingYear"))
+
+        land_area = None
+        building_area = None
+        exclusive_area = None
+        analysis_area = None
+
+        if "マンション" in property_type:
+            exclusive_area = land_or_unit_area
+            analysis_area = exclusive_area
+        elif "戸建て" in property_type:
+            land_area = land_or_unit_area
+            building_area = total_floor_area
+            analysis_area = building_area or land_area
+        else:
+            land_area = land_or_unit_area
+            building_area = total_floor_area
+            analysis_area = building_area or land_area
+
+        road_parts = [
+            str(row.get("Direction") or "").strip(),
+            str(row.get("Classification") or "").strip(),
+        ]
+        breadth = str(row.get("Breadth") or "").strip()
+        if breadth:
+            road_parts.append(f"幅員{breadth}m")
+        road = " ".join(part for part in road_parts if part)
+
+        raw_record = {
+            "物件ID": f"MLIT-{row.get('DistrictCode') or row.get('MunicipalityCode') or 'NA'}-{index}",
+            "物件名": f"{address} {row.get('Type') or ''}".strip(),
+            "物件種別": property_type,
+            # アプリ内の価格単位は「万円」。APIの円を万円へ変換する。
+            "価格": (price_yen / 10000.0) if price_yen is not None else None,
+            "住所": address,
+            "都道府県": prefecture,
+            "市区町村": municipality,
+            "土地面積": land_area,
+            "建物面積": building_area,
+            "専有面積": exclusive_area,
+            "面積": analysis_area,
+            "築年": building_year,
+            "間取り": row.get("FloorPlan") or None,
+            "構造": row.get("Structure") or None,
+            "用途地域": row.get("CityPlanning") or None,
+            "接道": road or None,
+            "取引年月": row.get("Period") or None,
+            "データ元": "mlit_api",
+            "取得日時": datetime.now().isoformat(timespec="seconds"),
+        }
+        record = normalize_property_record(raw_record, source="mlit_api")
+        record["価格情報区分"] = row.get("PriceCategory") or None
+        record["取引種類"] = row.get("Type") or None
+        record["地区コード"] = row.get("DistrictCode") or None
+        records.append(record)
+
+    if not records:
+        return pd.DataFrame()
+
+    return pd.DataFrame(records)
+
+
+def fetch_mlit_property_data(params=None):
+    """XIT001から不動産取引価格・成約価格を取得する。"""
+    if not MLIT_API_ENABLED:
+        return pd.DataFrame()
+
+    request_params = dict(params or {})
+    request_params.setdefault("language", "ja")
+
+    if not request_params.get("year"):
+        raise ValueError("取引年を指定してください。")
+    if not any(request_params.get(key) for key in ("area", "city", "station")):
+        raise ValueError("都道府県・市区町村・駅のいずれかを指定してください。")
+
+    response = requests.get(
+        MLIT_API_BASE_URL,
+        params=request_params,
+        headers=_mlit_headers(),
+        timeout=30
+    )
+
+    if response.status_code in (401, 403):
+        raise RuntimeError("APIキーが認証されませんでした。Secrets の MLIT_API_KEY を確認してください。")
+
+    response.raise_for_status()
+    payload = response.json()
+
+    if str(payload.get("status", "")).upper() not in ("", "OK"):
+        raise RuntimeError(f"国土交通省APIからエラーが返されました：{payload.get('status')}")
+
+    return convert_mlit_rows_to_dataframe(payload.get("data", []))
+
+
+@st.cache_data(ttl=86400, show_spinner=False)
+def fetch_mlit_cities(area_code):
+    """XIT002から指定都道府県の市区町村一覧を取得する。"""
+    response = requests.get(
+        MLIT_CITY_API_URL,
+        params={"area": area_code},
+        headers=_mlit_headers(),
+        timeout=20
+    )
+    if response.status_code in (401, 403):
+        raise RuntimeError("APIキーが認証されませんでした。")
+    response.raise_for_status()
+    payload = response.json()
+    cities = []
+    for item in payload.get("data", []) or []:
+        city_id = str(item.get("id") or "").strip()
+        city_name = str(item.get("name") or "").strip()
+        if city_id and city_name:
+            cities.append((city_id, city_name))
+    return cities
+
+
+def get_comparison_data(manual_data=None, api_params=None):
+    """アップロードデータと国交省APIデータを共通形式で結合する。"""
+    frames = []
+    if manual_data is not None and len(manual_data) > 0:
+        frames.append(normalize_property_dataframe(manual_data, source="upload"))
+    if api_params:
+        api_data = fetch_mlit_property_data(api_params)
+        if api_data is not None and len(api_data) > 0:
+            frames.append(normalize_property_dataframe(api_data, source="mlit_api"))
+    if not frames:
+        return pd.DataFrame()
+    return pd.concat(frames, ignore_index=True, sort=False)
+
+
 def extract_municipality(address):
     if not address:
         return ""
@@ -431,7 +782,20 @@ def normalize_company_columns(df):
         "面積": ["面積", "建物面積", "専有面積", "延床面積", "面積(㎡)", "面積（㎡）"],
         "築年": ["築年", "築年月", "建築年", "竣工年"],
         "物件種別": ["物件種別", "種別", "物件タイプ"],
-        "住宅メーカー": ["住宅メーカー", "メーカー", "ハウスメーカー", "施工会社"],
+        "住宅メーカー": ["住宅メーカー", "メーカー", "ハウスメーカー"],
+        "施工会社": ["施工会社", "施工", "建築会社"],
+        "土地面積": ["土地面積", "敷地面積"],
+        "建物面積": ["建物面積", "延床面積"],
+        "専有面積": ["専有面積", "専有面積(㎡)", "専有面積（㎡）"],
+        "築年月": ["築年月", "建築年月", "竣工年月"],
+        "最寄り駅": ["最寄り駅", "最寄駅", "駅"],
+        "駅徒歩分": ["駅徒歩分", "徒歩分", "駅距離", "徒歩"],
+        "構造": ["構造", "建物構造"],
+        "用途地域": ["用途地域", "都市計画用途地域"],
+        "接道": ["接道", "接道状況", "前面道路"],
+        "取引年月": ["取引年月", "取引時期", "成約年月"],
+        "取引時地価": ["取引時地価", "当時地価", "地価(取引時)"],
+        "現在地価": ["現在地価", "地価", "最新地価"],
     }
     result = df.copy()
     existing = {str(c).strip(): c for c in result.columns}
@@ -497,7 +861,7 @@ def evaluate_property_row(row, comparison_data):
         return None, "比較物件が不足"
 
     median_unit_price = float(unit_prices.median())
-    building_age = max(0, 2026 - built_year)
+    building_age = max(0, datetime.now().year - built_year)
     age_adjustment = max(0.70, 1 - building_age * 0.01)
     estimated = median_unit_price * float(area) * age_adjustment
 
@@ -676,10 +1040,15 @@ def usage_limit_reached(event_name, free_limit=None):
 if "comparison_data" not in st.session_state:
     st.session_state["comparison_data"] = None
 
+if "api_ready_architecture" not in st.session_state:
+    st.session_state["api_ready_architecture"] = True
+
 
 # =========================================================
 # 比較データ
 # =========================================================
+
+st.markdown('<div id="step1-data"></div>', unsafe_allow_html=True)
 
 st.markdown(
     '<div class="section-title">📊 STEP 1｜価格の基準データ</div>',
@@ -688,13 +1057,144 @@ st.markdown(
 
 st.markdown(
     '<div class="section-description">'
-    'まず、価格の基準にするExcel・CSVを読み込みます。最初の1回だけでOKです。'
+    '国土交通省API、またはExcel・CSVから価格の基準データを読み込みます。最初の1回だけでOKです。'
     '</div>',
     unsafe_allow_html=True
 )
 
 with st.expander(
-    "📁 STEP 1｜比較データを読み込む",
+    "🏛️ 国土交通省APIから比較データを取得",
+    expanded=True
+):
+    api_key_ready = bool(get_mlit_api_key())
+
+    if api_key_ready:
+        st.success("国土交通省APIキーを認識しました。")
+    else:
+        st.info(
+            "この実行環境では MLIT_API_KEY が見つかりません。"
+            "Streamlit Community Cloud の公開版では、Secrets に登録したキーを使用します。"
+        )
+
+    prefecture_options = ["選択してください"] + list(PREFECTURE_CODES.keys())
+    selected_prefecture = st.selectbox(
+        "都道府県",
+        prefecture_options,
+        key="mlit_prefecture"
+    )
+
+    selected_area_code = PREFECTURE_CODES.get(selected_prefecture)
+    city_options = [("", "都道府県全体")]
+
+    if selected_area_code and api_key_ready:
+        try:
+            city_options += fetch_mlit_cities(selected_area_code)
+        except Exception as e:
+            st.warning(f"市区町村一覧を取得できませんでした：{e}")
+
+    selected_city_label = st.selectbox(
+        "市区町村（都道府県全体でも取得できます）",
+        [name for _, name in city_options],
+        key="mlit_city"
+    )
+    selected_city_code = next(
+        (code for code, name in city_options if name == selected_city_label),
+        ""
+    )
+
+    api_col1, api_col2, api_col3 = st.columns(3)
+
+    with api_col1:
+        api_year = st.selectbox(
+            "取引年",
+            list(range(datetime.now().year - 1, 2004, -1)),
+            key="mlit_year"
+        )
+
+    with api_col2:
+        api_quarter = st.selectbox(
+            "四半期",
+            [1, 2, 3, 4],
+            index=3,
+            format_func=lambda q: f"第{q}四半期",
+            key="mlit_quarter"
+        )
+
+    with api_col3:
+        price_class_label = st.selectbox(
+            "価格情報",
+            ["不動産取引価格のみ", "成約価格のみ", "両方"],
+            key="mlit_price_class"
+        )
+
+    price_class_codes = {
+        "不動産取引価格のみ": "01",
+        "成約価格のみ": "02",
+        "両方": ""
+    }
+
+    fetch_mlit_button = st.button(
+        "🏛️ 国土交通省APIから取得して価格基準に使う",
+        type="primary",
+        use_container_width=True,
+        key="fetch_mlit_button",
+        disabled=(not api_key_ready or not selected_area_code)
+    )
+
+    if fetch_mlit_button:
+        api_params = {
+            "year": api_year,
+            "quarter": api_quarter,
+            "language": "ja"
+        }
+        if selected_city_code:
+            api_params["city"] = selected_city_code
+        else:
+            api_params["area"] = selected_area_code
+
+        price_class_code = price_class_codes[price_class_label]
+        if price_class_code:
+            api_params["priceClassification"] = price_class_code
+
+        try:
+            with st.spinner("国土交通省APIから取引データを取得しています..."):
+                mlit_df = fetch_mlit_property_data(api_params)
+
+            if mlit_df.empty:
+                st.warning("指定した条件ではデータが見つかりませんでした。")
+            else:
+                mlit_result = calculate_unit_price(mlit_df)
+                st.session_state["comparison_data"] = mlit_result
+                st.session_state["mlit_comparison_data"] = mlit_result
+
+                usable_count = int(
+                    mlit_result["物件種別"].isin(
+                        ["新築戸建て", "中古戸建て", "中古マンション"]
+                    ).sum()
+                ) if "物件種別" in mlit_result.columns else 0
+
+                st.success(
+                    f"国土交通省APIから {len(mlit_result)}件を取得しました。"
+                    f" 住宅の価格比較に使える候補は {usable_count}件です。"
+                )
+
+                if "物件種別" in mlit_result.columns:
+                    type_summary = (
+                        mlit_result["物件種別"]
+                        .value_counts(dropna=False)
+                        .rename_axis("物件種別")
+                        .reset_index(name="件数")
+                    )
+                    st.dataframe(type_summary, use_container_width=True, hide_index=True)
+
+                with st.expander("取得した国土交通省データを見る"):
+                    st.dataframe(mlit_result, use_container_width=True)
+
+        except Exception as e:
+            st.error(f"国土交通省APIの取得中にエラーが発生しました：{e}")
+
+with st.expander(
+    "📁 Excel・CSVから比較データを読み込む",
     expanded=False
 ):
 
@@ -719,6 +1219,7 @@ with st.expander(
                     uploaded_file
                 )
 
+            df = normalize_property_dataframe(df, source="upload")
             result = calculate_unit_price(
                 df
             )
@@ -998,6 +1499,8 @@ with st.expander("🏢 会社の物件データを読み込む", expanded=False)
 # =========================================================
 # 入力方法：手入力を本体、URL自動入力を補助機能として扱う
 # =========================================================
+
+st.markdown('<div id="step2-input"></div>', unsafe_allow_html=True)
 
 st.markdown(
     '<div class="section-title">🏠 1件の物件をチェック</div>',
@@ -1685,6 +2188,8 @@ with st.container(border=True):
 # 物件評価
 # =========================================================
 
+st.markdown('<div id="step3-check"></div>', unsafe_allow_html=True)
+
 st.markdown(
     '<div class="section-title">💰 価格チェック</div>',
     unsafe_allow_html=True
@@ -1799,7 +2304,7 @@ if evaluate_button:
         comparison_unit_prices.median()
     )
 
-    current_year = 2026
+    current_year = datetime.now().year
 
     building_age = max(
         0,

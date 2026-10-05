@@ -280,13 +280,31 @@ PREFECTURE_CODES = {
 
 
 def get_mlit_api_key():
-    """Streamlit Secretsを優先し、ローカル環境変数も予備として使う。"""
-    secret_value = ""
+    """Streamlit Secretsを最優先し、ローカル環境変数を予備として使う。"""
+    # Streamlit Community Cloud の Secrets に
+    # MLIT_API_KEY = "..." と登録した値を直接読み込む。
     try:
-        secret_value = str(st.secrets.get("MLIT_API_KEY", "")).strip()
+        secret_value = str(st.secrets["MLIT_API_KEY"]).strip()
+        if secret_value:
+            return secret_value
     except Exception:
-        secret_value = ""
-    return secret_value or os.getenv("MLIT_API_KEY", "").strip()
+        pass
+
+    # 念のため [mlit] セクションで登録した場合にも対応する。
+    try:
+        mlit_section = st.secrets["mlit"]
+        for key_name in ("MLIT_API_KEY", "API_KEY", "api_key"):
+            try:
+                secret_value = str(mlit_section[key_name]).strip()
+                if secret_value:
+                    return secret_value
+            except Exception:
+                continue
+    except Exception:
+        pass
+
+    # ローカルPCで環境変数を設定している場合の予備経路。
+    return os.environ.get("MLIT_API_KEY", "").strip()
 
 
 def _mlit_headers():

@@ -73,7 +73,7 @@ def _download_prefecture(pref_code: str) -> bytes:
 
 # Japan Post postal-code data provides a fallback when the Digital Agency
 # address registry rejects downloads from a cloud hosting IP (HTTP 403).
-POSTAL_URL = "https://www.post.japanpost.jp/zipcode/dl/kogaki/zip/ken_all.zip"
+POSTAL_URL = "https://www.post.japanpost.jp/service/search/zipcode/download/kogaki/zip/ken_all.zip"
 
 
 def _postal_fallback(pref_code: str) -> pd.DataFrame:

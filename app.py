@@ -146,8 +146,7 @@ if logo_path.is_file():
 else:
     APP_ICON_BASE64 = ""
 
-if logo_path.is_file():
-    st.image(str(logo_path), width=110)
+
 
 st.markdown(
     f"""
@@ -157,7 +156,7 @@ st.markdown(
            <a href="#service-guide">サービスについて</a></div>
     </div>
     <section class="hero">
-
+    <img class="hero-logo" src="data:image/png;base64,{APP_ICON_BASE64}" alt="ロゴ">
       <div class="hero-copy">
         <div class="hero-badge">住まい選びに、価格のものさしを。</div>
         <h1 class="hero-title">その物件価格、<br>AIで確かめよう。</h1>

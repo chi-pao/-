@@ -71,6 +71,53 @@ def _download_prefecture(pref_code: str) -> bytes:
     return response.content
 
 
+# Japan Post postal-code data provides a fallback when the Digital Agency
+# address registry rejects downloads from a cloud hosting IP (HTTP 403).
+POSTAL_URL = "https://www.post.japanpost.jp/zipcode/dl/kogaki/zip/ken_all.zip"
+
+
+def _postal_fallback(pref_code: str) -> pd.DataFrame:
+    """Return canonical address rows; postal data has no coordinates."""
+    cache = CACHE_DIR / "ken_all.zip"
+    if not cache.exists():
+        response = requests.get(
+            POSTAL_URL, timeout=REQUEST_TIMEOUT,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; AddressMaster/1.0)"},
+        )
+        response.raise_for_status()
+        raw = response.content
+        # Do not cache an HTML error page as ZIP.
+        with zipfile.ZipFile(io.BytesIO(raw)) as zf:
+            if not any(n.lower().endswith(".csv") for n in zf.namelist()):
+                raise RuntimeError("日本郵便の住所ZIPにCSVがありません。")
+        cache.write_bytes(raw)
+    with zipfile.ZipFile(cache) as zf:
+        names = [n for n in zf.namelist() if n.lower().endswith(".csv")]
+        if not names:
+            raise RuntimeError("日本郵便の住所ZIPにCSVがありません。")
+        with zf.open(names[0]) as fp:
+            raw = pd.read_csv(fp, header=None, encoding="cp932", dtype=str,
+                              on_bad_lines="skip", low_memory=False)
+    raw = raw[raw[0].fillna("").str[:2] == pref_code].copy()
+    if raw.empty:
+        return pd.DataFrame(columns=["prefecture_code", "prefecture_name",
+            "municipality_code", "municipality_name", "town_name", "lat", "lon"])
+    raw = raw[~raw[8].fillna("").str.contains(
+        "以下に掲載がない場合|の次に番地がくる場合|一円", regex=True)]
+    raw = raw[raw[8].notna() & (raw[8].str.strip() != "")]
+    result = pd.DataFrame({
+        "prefecture_code": pref_code,
+        "prefecture_name": raw[6].to_numpy(),
+        "municipality_code": raw[0].str[:5].to_numpy(),
+        "municipality_name": raw[7].to_numpy(),
+        "town_name": raw[8].to_numpy(),
+        "lat": float("nan"), "lon": float("nan"),
+    })
+    return result.drop_duplicates(
+        ["municipality_code", "town_name"]
+    ).sort_values(["municipality_name", "town_name"], kind="stable").reset_index(drop=True)
+
+
 def _load_raw_prefecture(pref_code: str) -> pd.DataFrame:
     pref_code = str(pref_code).zfill(2)
     zip_path = CACHE_DIR / f"mt_town_fullset_pref{pref_code}.csv.zip"
@@ -237,8 +284,17 @@ def _canonicalize(raw: pd.DataFrame, pref_code: str) -> pd.DataFrame:
 @lru_cache(maxsize=64)
 def load_prefecture_master(pref_code: str) -> pd.DataFrame:
     pref_code = str(pref_code).zfill(2)
-    raw = _load_raw_prefecture(pref_code)
-    return _canonicalize(raw, pref_code)
+    try:
+        raw = _load_raw_prefecture(pref_code)
+        return _canonicalize(raw, pref_code)
+    except (requests.RequestException, zipfile.BadZipFile, RuntimeError, OSError) as primary_error:
+        try:
+            return _postal_fallback(pref_code)
+        except Exception as secondary_error:
+            raise RuntimeError(
+                f"住所データ取得に失敗しました。住所マスタ: {primary_error}; "
+                f"日本郵便の代替データ: {secondary_error}"
+            ) from secondary_error
 
 
 def get_municipalities(pref_code: str) -> list[tuple[str, str]]:

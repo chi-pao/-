@@ -706,6 +706,9 @@ def load_v7_candidate():
                     return approved
         except (OSError, ValueError, TypeError, KeyError, ImportError):
             pass
+    # Never fall back to an unapproved research candidate in automatic mode.
+    if read_used_house_mode() != "v7":
+        return None
     candidate_path = V7_DIR / "v7_used_house_candidate.joblib"
     if not candidate_path.is_file():
         return None

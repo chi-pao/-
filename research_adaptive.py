@@ -196,7 +196,16 @@ def run(args):
     if not h or not h.is_file(): raise FileNotFoundError('Historical ZIP not found')
     out=site/'models'/'candidates'; out.mkdir(parents=True,exist_ok=True)
     report_path=out/'adaptive_research_report.json'
-    signature=hashlib.sha256('|'.join(f'{p.resolve()}:{p.stat().st_size}:{p.stat().st_mtime_ns}' for p in (h,e) if p and p.is_file()).encode()).hexdigest()
+    # Stable across runner restarts and archive re-downloads; reset only if bytes change.
+    fingerprints=[]
+    for p in (h,e):
+        if p and p.is_file():
+            digest=hashlib.sha256()
+            with p.open('rb') as stream:
+                for chunk in iter(lambda: stream.read(1024*1024), b''):
+                    digest.update(chunk)
+            fingerprints.append(digest.hexdigest())
+    signature=hashlib.sha256('|'.join(fingerprints).encode()).hexdigest()
     data=prepare(load_history(h,300 if args.quick else None))
     train=data.loc[data.TransactionYear<=2023].reset_index(drop=True)
     val=data.loc[data.TransactionYear==2024].reset_index(drop=True)

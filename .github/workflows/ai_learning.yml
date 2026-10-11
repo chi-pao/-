@@ -51,6 +51,16 @@ jobs:
             models/candidates/adaptive_used_house_candidate.joblib
           retention-days: 30
           if-no-files-found: error
+      - name: Save learning history for the next scheduled run
+        if: steps.data.outputs.available == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f models/candidates/adaptive_research_report.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Record autonomous learning history"
+            git push
+          fi
       - name: Check independently held-out evaluation data
         id: holdout
         shell: bash

@@ -962,7 +962,7 @@ def predict_ai_reference_price(
     common["LogAnnualIncome"] = float(np.log1p(revenue_num)) if np.isfinite(revenue_num) and revenue_num > 0 else np.nan
 
     # V7 is available only for used detached houses. Original production models stay intact.
-    if model_key == "used_house" and read_used_house_mode() == "v7":
+    if model_key == "used_house" and ((V7_DIR / "approved_used_house.json").is_file() or read_used_house_mode() == "v7"):
         try:
             candidate = load_v7_candidate()
             if candidate is not None:

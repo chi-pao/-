@@ -1,0 +1,62 @@
+name: Real-estate AI research and safe promotion
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 2 * * 1'
+permissions:
+  contents: write
+concurrency:
+  group: ai-research
+  cancel-in-progress: false
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Find training data
+        id: data
+        shell: bash
+        run: |
+          if find data -maxdepth 2 -type f -name '*.zip' -print -quit 2>/dev/null | grep -q .; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No training ZIP in data/. Existing live model is preserved."
+          fi
+      - name: Research a new candidate
+        if: steps.data.outputs.available == 'true'
+        run: python research_adaptive.py --site . --rounds 1
+      - name: Check independently held-out evaluation data
+        id: holdout
+        shell: bash
+        run: |
+          if test -s data/unused_holdout.csv && test -s models/candidates/v7_used_house_candidate.joblib && test -s models/candidates/adaptive_used_house_candidate.joblib; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Missing independent holdout or model. Promotion is blocked."
+          fi
+      - name: Promote only after independent accuracy test
+        if: steps.data.outputs.available == 'true' && steps.holdout.outputs.available == 'true'
+        run: |
+          python promote_used_house.py \
+            --incumbent models/candidates/v7_used_house_candidate.joblib \
+            --challenger models/candidates/adaptive_used_house_candidate.joblib \
+            --holdout data/unused_holdout.csv \
+            --holdout-year 2026 --site .
+      - name: Commit approved artifacts only
+        if: steps.data.outputs.available == 'true' && steps.holdout.outputs.available == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f models/candidates/approved_used_house.joblib models/candidates/approved_used_house.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Promote independently verified used-house model"
+            git push
+          fi

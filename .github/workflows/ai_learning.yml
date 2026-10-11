@@ -41,6 +41,16 @@ jobs:
       - name: Research a new candidate
         if: steps.data.outputs.available == 'true'
         run: python research_adaptive.py --site . --rounds 12
+      - name: Preserve learning report and challenger model
+        if: steps.data.outputs.available == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: property-ai-research
+          path: |
+            models/candidates/adaptive_research_report.json
+            models/candidates/adaptive_used_house_candidate.joblib
+          retention-days: 30
+          if-no-files-found: error
       - name: Check independently held-out evaluation data
         id: holdout
         shell: bash

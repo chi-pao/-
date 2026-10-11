@@ -268,7 +268,7 @@ def run(args):
         full=data.loc[data.TransactionYear<=2025].reset_index(drop=True)
         final=fit(full,champion)
         bundle={'pipeline':V8Pipeline(final,champion[1]),'feature_columns':FEATURES,
-                'model_key':'used_house','target_unit':'yen','candidate_only':True,
+                'model_key':'used_house','target_unit':'yen','training_end_year':2025,'candidate_only':True,
                 'display_name':'Feedback-driven adaptive research candidate (not approved)', 'validation_report':report}
         target=out/'adaptive_used_house_candidate.joblib';tmp=out/'adaptive_used_house_candidate.tmp.joblib'
         try:

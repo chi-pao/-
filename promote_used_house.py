@@ -1,0 +1,103 @@
+"""Fail-closed promotion of a used-house model after independent evaluation.
+
+Usage:
+ python promote_used_house.py --incumbent models/candidates/v7_used_house_candidate.joblib --challenger models/candidates/adaptive_used_house_candidate.joblib --holdout data/unused_holdout.csv --holdout-year 2026 --site .
+The holdout must contain actual price in yen (price_yen) and all model features.
+Do not use a holdout that has previously been used for model selection.
+"""
+from __future__ import annotations
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import joblib
+import numpy as np
+import pandas as pd
+
+
+def predict(bundle, data):
+    if not isinstance(bundle, dict) or bundle.get("model_key") != "used_house" or bundle.get("target_unit") != "yen":
+        raise ValueError("Unsupported model type or target unit")
+    if bundle.get("ensemble_components") or any(bundle.get(k) is not None for k in ("post_calibration", "calibration", "verified_post_calibration")):
+        raise ValueError("Complex incumbent calibration cannot be reproduced safely")
+    cols = bundle.get("feature_columns")
+    pipe = bundle.get("pipeline")
+    if not isinstance(cols, (list, tuple)) or not cols or not hasattr(pipe, "predict"):
+        raise ValueError("Missing model pipeline or feature columns")
+    missing = set(cols).difference(data.columns)
+    if missing:
+        raise ValueError("Missing evaluation features: " + ", ".join(sorted(missing)))
+    prediction = np.asarray(pipe.predict(data[list(cols)]), dtype=float)
+    if prediction.shape != (len(data),) or not np.all(np.isfinite(prediction)) or np.any(prediction <= 0):
+        raise ValueError("Invalid prediction")
+    return prediction
+
+
+def score(y, pred):
+    errors = np.abs(y - pred)
+    return {"mae_yen": float(errors.mean()),
+            "median_ape_pct": float(np.median(errors / y) * 100),
+            "within20_pct": float(np.mean(errors / y <= 0.20) * 100)}
+
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument("--incumbent", type=Path, required=True)
+    p.add_argument("--challenger", type=Path, required=True)
+    p.add_argument("--holdout", type=Path, required=True)
+    p.add_argument("--holdout-year", type=int, required=True)
+    p.add_argument("--site", type=Path, default=Path("."))
+    p.add_argument("--min-rows", type=int, default=200)
+    args = p.parse_args()
+    if args.holdout_year <= 2025:
+        p.error("2024/2025 were used in previous research; require a later genuinely unseen holdout")
+    data = pd.read_csv(args.holdout)
+    if len(data) < args.min_rows or "price_yen" not in data:
+        p.error("Independent holdout is missing price_yen or has too few records")
+    y = pd.to_numeric(data["price_yen"], errors="coerce").to_numpy(dtype=float)
+    if not np.all(np.isfinite(y)) or np.any(y <= 0):
+        p.error("Invalid holdout prices")
+    incumbent = joblib.load(args.incumbent)
+    challenger = joblib.load(args.challenger)
+    for label, bundle in (("incumbent", incumbent), ("challenger", challenger)):
+        cutoff = bundle.get("training_end_year") if isinstance(bundle, dict) else None
+        if cutoff is None or int(cutoff) >= args.holdout_year:
+            p.error(label + " training period cannot be proven disjoint from holdout")
+    before = score(y, predict(incumbent, data))
+    after = score(y, predict(challenger, data))
+    report = {"incumbent": before, "challenger": after, "holdout_year": args.holdout_year,
+              "holdout_rows": len(data), "status": "rejected"}
+    # Require material accuracy improvement and no significant regression.
+    approved = (after["median_ape_pct"] <= before["median_ape_pct"] - 0.5
+                and after["mae_yen"] <= before["mae_yen"] * 1.01
+                and after["within20_pct"] >= before["within20_pct"] - 1)
+    if approved:
+        target_dir = args.site / "models" / "candidates"
+        target_dir.mkdir(parents=True, exist_ok=True)
+        target = target_dir / "approved_used_house.joblib"
+        temp = target.with_suffix(".tmp")
+        try:
+            bundle = dict(challenger)
+            bundle["candidate_only"] = False
+            bundle["approval_status"] = "approved"
+            joblib.dump(bundle, temp)
+            checked = joblib.load(temp)
+            predict(checked, data.iloc[:min(len(data), 10)])
+            digest = hashlib.sha256(temp.read_bytes()).hexdigest()
+            os.replace(temp, target)
+            manifest = {"approved": True, "filename": target.name, "sha256": digest,
+                        "evaluation": report, "model_key": "used_house"}
+            temp_manifest = target_dir / "approved_used_house.json.tmp"
+            temp_manifest.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+            os.replace(temp_manifest, target_dir / "approved_used_house.json")
+            report["status"] = "approved"
+        finally:
+            temp.unlink(missing_ok=True)
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    if not approved:
+        raise SystemExit("No safe improvement; incumbent retained")
+
+
+if __name__ == "__main__":
+    main()

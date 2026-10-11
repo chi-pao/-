@@ -19,6 +19,15 @@ jobs:
           python-version: '3.11'
           cache: pip
       - run: pip install -r requirements.txt
+      - name: Restore training archive from configured source
+        env:
+          TRAINING_ARCHIVE_URL: ${{ secrets.TRAINING_ARCHIVE_URL }}
+        run: |
+          mkdir -p data
+          if [ -n "$TRAINING_ARCHIVE_URL" ] && [ ! -s data/All_20214_20254.zip ]; then
+            curl --fail --location --retry 3 --max-time 300 "$TRAINING_ARCHIVE_URL" -o data/All_20214_20254.zip
+            python -c "import zipfile; p='data/All_20214_20254.zip'; assert zipfile.is_zipfile(p)"
+          fi
       - name: Find training data
         id: data
         shell: bash
@@ -43,6 +52,7 @@ jobs:
             echo "::warning::Missing independent holdout or model. Promotion is blocked."
           fi
       - name: Promote only after independent accuracy test
+        id: promotion
         if: steps.data.outputs.available == 'true' && steps.holdout.outputs.available == 'true'
         run: |
           python promote_used_house.py \
@@ -51,7 +61,7 @@ jobs:
             --holdout data/unused_holdout.csv \
             --holdout-year 2026 --site .
       - name: Commit approved artifacts only
-        if: steps.data.outputs.available == 'true' && steps.holdout.outputs.available == 'true'
+        if: steps.promotion.outcome == 'success'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

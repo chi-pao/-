@@ -40,7 +40,7 @@ jobs:
           fi
       - name: Research a new candidate
         if: steps.data.outputs.available == 'true'
-        run: python research_adaptive.py --site . --rounds 1
+        run: python research_adaptive.py --site . --rounds 12
       - name: Check independently held-out evaluation data
         id: holdout
         shell: bash

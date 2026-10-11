@@ -681,6 +681,31 @@ def _load_v7_candidate_cached(path_string, modified_ns):
 
 
 def load_v7_candidate():
+    # Use an approved model only when its checksum and metadata are valid.
+    # Otherwise retain the existing V7 model as a rollback.
+    approval_path = V7_DIR / "approved_used_house.json"
+    if approval_path.is_file():
+        try:
+            import hashlib
+            approval = json.loads(approval_path.read_text(encoding="utf-8"))
+            approved_path = V7_DIR / "approved_used_house.joblib"
+            digest = approval.get("sha256")
+            if (approval.get("approved") is True
+                and approval.get("filename") == "approved_used_house.joblib"
+                and isinstance(digest, str) and len(digest) == 64
+                and approved_path.is_file()
+                and hashlib.sha256(approved_path.read_bytes()).hexdigest() == digest):
+                approved = _load_v7_candidate_cached(
+                    str(approved_path), approved_path.stat().st_mtime_ns
+                )
+                if (isinstance(approved, dict)
+                    and approved.get("model_key") == "used_house"
+                    and approved.get("target_unit") == "yen"
+                    and approved.get("feature_columns")
+                    and hasattr(approved.get("pipeline"), "predict")):
+                    return approved
+        except (OSError, ValueError, TypeError, KeyError, ImportError):
+            pass
     candidate_path = V7_DIR / "v7_used_house_candidate.joblib"
     if not candidate_path.is_file():
         return None

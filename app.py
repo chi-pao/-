@@ -164,7 +164,6 @@ st.markdown(
           物件の条件と地域情報をもとに、売出価格との差をわかりやすく表示します。</div>
         <div class="hero-actions">
           <a class="hero-action" href="#step1-input">無料で価格をチェック →</a>
-          <a class="hero-action secondary" href="#service-guide">しくみを見る</a>
         </div>
       </div>
     </section>

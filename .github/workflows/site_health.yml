@@ -1,0 +1,26 @@
+name: Public site availability check
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '43 */6 * * *'
+permissions:
+  contents: read
+jobs:
+  availability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check public Streamlit endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://okaidokucyekka.streamlit.app/"
+          code="$(curl -L -sS -o /tmp/site-response.html -w '%{http_code}' --connect-timeout 15 --max-time 60 "$URL")"
+          echo "HTTP status: $code"
+          if [ "$code" -lt 200 ] || [ "$code" -ge 400 ]; then
+            echo "::error::Site returned HTTP $code"
+            exit 1
+          fi
+          if grep -Eiq 'This app has gone to sleep|app is in the oven|app has gone over its resource limits' /tmp/site-response.html; then
+            echo "::warning::Streamlit returned a hibernation or resource page"
+          fi

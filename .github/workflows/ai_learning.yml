@@ -70,6 +70,15 @@ jobs:
       # 2025/2026 data were inspected in prior research and cannot be a fresh holdout.
       # The owner must independently verify provenance and register the exact CSV hash
       # as a repository secret. Without it, research still runs; promotion is disabled.
+      - name: Restore independently sourced holdout when configured
+        shell: bash
+        env:
+          INDEPENDENT_HOLDOUT_URL: ${{ secrets.INDEPENDENT_HOLDOUT_URL }}
+        run: |
+          if [ -n "$INDEPENDENT_HOLDOUT_URL" ] && [ ! -s data/unused_holdout.csv ]; then
+            mkdir -p data
+            curl --fail --location --retry 3 --max-time 300 "$INDEPENDENT_HOLDOUT_URL" -o data/unused_holdout.csv
+          fi
       - name: Check independently held-out evaluation data
         id: holdout
         shell: bash

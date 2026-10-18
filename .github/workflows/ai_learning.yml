@@ -19,6 +19,8 @@ jobs:
           python-version: '3.11'
           cache: pip
       - run: pip install -r requirements.txt
+      - name: Check promotion and research Python syntax
+        run: python -m py_compile promote_used_house.py research_adaptive.py app.py
       - name: Restore training archive from configured source
         env:
           TRAINING_ARCHIVE_URL: ${{ secrets.TRAINING_ARCHIVE_URL }}
@@ -93,8 +95,11 @@ jobs:
           if test -s models/candidates/approved_used_house.joblib && test -s models/candidates/approved_used_house.json; then
             python -c 'import json,hashlib,pathlib; p=pathlib.Path("models/candidates/approved_used_house.joblib"); m=json.loads(pathlib.Path("models/candidates/approved_used_house.json").read_text()); assert m.get("approved") is True and m.get("sha256")==hashlib.sha256(p.read_bytes()).hexdigest()'
             echo "path=models/candidates/approved_used_house.joblib" >> "$GITHUB_OUTPUT"
-          else
+          elif test -s models/candidates/v7_used_house_candidate.joblib; then
             echo "path=models/candidates/v7_used_house_candidate.joblib" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Neither approved nor V7 incumbent exists in this runner; promotion cannot safely proceed."
+            exit 1
           fi
       - name: Promote only after independent accuracy test
         id: promotion

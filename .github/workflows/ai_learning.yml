@@ -21,15 +21,19 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Check promotion and research Python syntax
         run: python -m py_compile promote_used_house.py research_adaptive.py app.py
-      - name: Restore training archive from configured source
-        env:
-          TRAINING_ARCHIVE_URL: ${{ secrets.TRAINING_ARCHIVE_URL }}
+      - name: Restore training archive and V7 baseline from GitHub Release
+        shell: bash
         run: |
-          mkdir -p data
-          if [ -n "$TRAINING_ARCHIVE_URL" ] && [ ! -s data/All_20214_20254.zip ]; then
-            curl --fail --location --retry 3 --max-time 300 "$TRAINING_ARCHIVE_URL" -o data/All_20214_20254.zip
-            python -c "import zipfile; p='data/All_20214_20254.zip'; assert zipfile.is_zipfile(p)"
+          mkdir -p data models/candidates
+          RELEASE_URL="https://github.com/chi-pao/-/releases/download/ai-training-data-v1"
+          if [ ! -s data/All_20214_20254.zip ]; then
+            curl --fail --location --retry 3 --max-time 300 "$RELEASE_URL/All_20214_20254.zip" -o data/All_20214_20254.zip
           fi
+          python -c "import zipfile; assert zipfile.is_zipfile('data/All_20214_20254.zip')"
+          if [ ! -s models/candidates/v7_used_house_candidate.joblib ]; then
+            curl --fail --location --retry 3 --max-time 300 "$RELEASE_URL/v7_used_house_candidate.joblib" -o models/candidates/v7_used_house_candidate.joblib
+          fi
+          python -c "from pathlib import Path; assert Path('models/candidates/v7_used_house_candidate.joblib').stat().st_size > 1000000"
       - name: Find training data
         id: data
         shell: bash

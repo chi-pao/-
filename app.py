@@ -3307,11 +3307,9 @@ st.link_button(
     "https://docs.google.com/forms/d/e/1FAIpQLSdVgvFN8ZMQzCgC2I3S_C-Hlznkw9EYdIKGT-SNIgonbSCrzQ/viewform",
     use_container_width=True,
 )
-st.caption("一般のお問い合わせ・返信希望のご連絡は上のフォームをご利用ください。下の入力欄は物件価格やサイト改善の報告用です。")
-st.caption(
-    "以下は物件価格・データ精度の改善報告用です。正式なお問い合わせや返信希望のご連絡は上のGoogleフォームをご利用ください。"
-    "この報告欄は現在一時保存のみで、運営者への通知や長期保存は保証されません。"
-)
+st.caption("お問い合わせ・返信希望のご連絡は上のGoogleフォームをご利用ください。")
+st.markdown("#### 🏠 物件価格・データの改善報告")
+st.caption("以下の報告欄は一時保存のみで、運営者への通知や長期保存は保証されません。確実に届けたい場合は上のGoogleフォームをご利用ください。")
 
 with st.form("feedback_form", clear_on_submit=True):
     fb_category = st.selectbox(
@@ -3411,7 +3409,7 @@ if fb_submit:
             }
         )
         if result.get("webhook_status") == "送信済み":
-            st.success("お問い合わせを受け付けました。ありがとうございます。")
+            st.success("改善報告を送信しました。ありがとうございます。")
         elif result.get("webhook_status") == "未設定":
             st.warning("改善報告は一時保存のみです。確実に届けたい場合は上のGoogleフォームから送信してください。")
         else:

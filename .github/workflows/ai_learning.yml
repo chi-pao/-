@@ -73,7 +73,16 @@ jobs:
           if [ -z "$INDEPENDENT_HOLDOUT_SHA256" ]; then
             echo "available=false" >> "$GITHUB_OUTPUT"
             echo "::warning::Independent holdout provenance has not been approved. Promotion is blocked."
-          elif ! printf '%s' "$INDEPENDENT_HOLDOUT_SHA256" | grep -Eq '^[0-9a-fA-F]{64}
+          elif ! printf '%s' "$INDEPENDENT_HOLDOUT_SHA256" | grep -Eq '^[0-9a-fA-F]{64}$'; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Invalid holdout fingerprint. Promotion is blocked."
+          elif ! test -s data/unused_holdout.csv || ! test -s models/candidates/v7_used_house_candidate.joblib || ! test -s models/candidates/adaptive_used_house_candidate.joblib; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Missing holdout or comparison model. Promotion is blocked."
+          elif [ "$(sha256sum data/unused_holdout.csv | cut -d' ' -f1)" != "$(printf '%s' "$INDEPENDENT_HOLDOUT_SHA256" | tr 'A-F' 'a-f')" ]; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Holdout fingerprint mismatch. Promotion is blocked."
+          else
             echo "available=true" >> "$GITHUB_OUTPUT"
           fi
       - name: Promote only after independent accuracy test

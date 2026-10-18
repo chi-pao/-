@@ -3302,6 +3302,12 @@ with st.expander("❓ よくある質問"):
 # =========================================================
 st.divider()
 st.markdown("### 💬 お問い合わせ・改善フィードバック")
+st.link_button(
+    "📩 お問い合わせはこちら（Googleフォーム）",
+    "https://docs.google.com/forms/d/e/1FAIpQLSdVgvFN8ZMQzCgC2I3S_C-Hlznkw9EYdIKGT-SNIgonbSCrzQ/viewform",
+    use_container_width=True,
+)
+st.caption("一般のお問い合わせ・返信希望のご連絡は上のフォームをご利用ください。下の入力欄は物件価格やサイト改善の報告用です。")
 st.caption(
     "一般のご意見・価格差の報告・不具合・法人や提携のご相談まで、"
     "窓口は1つにまとめています。内容は裏側で分類し、学習候補は管理者確認後にのみ利用します。"

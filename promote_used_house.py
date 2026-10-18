@@ -58,6 +58,18 @@ def main():
     y = pd.to_numeric(data["price_yen"], errors="coerce").to_numpy(dtype=float)
     if not np.all(np.isfinite(y)) or np.any(y <= 0):
         p.error("Invalid holdout prices")
+    if "TransactionYear" not in data.columns:
+        p.error("Holdout requires TransactionYear for chronological validation")
+    years = pd.to_numeric(data["TransactionYear"], errors="coerce").to_numpy(dtype=float)
+    if not np.all(np.isfinite(years)) or np.any(years < args.holdout_year):
+        p.error("Holdout contains records older than the required independent evaluation year")
+    target_dir = args.site / "models" / "candidates"
+    manifest_path = target_dir / "approved_used_house.json"
+    holdout_sha256 = hashlib.sha256(args.holdout.read_bytes()).hexdigest()
+    if manifest_path.is_file():
+        previous = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if previous.get("holdout_sha256") == holdout_sha256:
+            p.error("This holdout was already used for model approval; provide fresh unseen data")
     incumbent = joblib.load(args.incumbent)
     challenger = joblib.load(args.challenger)
     for label, bundle in (("incumbent", incumbent), ("challenger", challenger)):
@@ -67,7 +79,7 @@ def main():
     before = score(y, predict(incumbent, data))
     after = score(y, predict(challenger, data))
     report = {"incumbent": before, "challenger": after, "holdout_year": args.holdout_year,
-              "holdout_rows": len(data), "status": "rejected"}
+              "holdout_rows": len(data), "holdout_sha256": holdout_sha256, "status": "rejected"}
     # Require material accuracy improvement and no significant regression.
     approved = (after["median_ape_pct"] <= before["median_ape_pct"] - 0.5
                 and after["mae_yen"] <= before["mae_yen"] * 1.01
@@ -86,12 +98,13 @@ def main():
             predict(checked, data.iloc[:min(len(data), 10)])
             digest = hashlib.sha256(temp.read_bytes()).hexdigest()
             os.replace(temp, target)
+            report["status"] = "approved"
             manifest = {"approved": True, "filename": target.name, "sha256": digest,
+                        "holdout_sha256": holdout_sha256,
                         "evaluation": report, "model_key": "used_house"}
             temp_manifest = target_dir / "approved_used_house.json.tmp"
             temp_manifest.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
             os.replace(temp_manifest, target_dir / "approved_used_house.json")
-            report["status"] = "approved"
         finally:
             temp.unlink(missing_ok=True)
     print(json.dumps(report, ensure_ascii=False, indent=2))

@@ -87,6 +87,20 @@ jobs:
           else
             echo "available=true" >> "$GITHUB_OUTPUT"
           fi
+      - name: Validate independent evaluation year
+        id: holdoutyear
+        if: steps.holdout.outputs.available == 'true'
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          import pandas as pd
+          years = pd.to_numeric(pd.read_csv('data/unused_holdout.csv', usecols=['TransactionYear'])['TransactionYear'], errors='coerce')
+          if years.isna().any() or not years.ge(2026).all():
+              raise SystemExit('Holdout requires genuinely unseen transactions from 2026 onward')
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write('year=' + str(int(years.min())) + chr(10))
+          PY
       - name: Choose current approved model as comparison baseline
         id: incumbent
         if: steps.data.outputs.available == 'true' && steps.holdout.outputs.available == 'true'
@@ -109,7 +123,7 @@ jobs:
             --incumbent ${{ steps.incumbent.outputs.path }} \
             --challenger models/candidates/adaptive_used_house_candidate.joblib \
             --holdout data/unused_holdout.csv \
-            --holdout-year 2027 --site .
+            --holdout-year ${{ steps.holdoutyear.outputs.year }} --site .
       - name: Commit approved artifacts only
         if: steps.promotion.outcome == 'success'
         run: |

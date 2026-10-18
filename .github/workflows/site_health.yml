@@ -21,6 +21,7 @@ jobs:
             echo "::error::Site returned HTTP $code"
             exit 1
           fi
-          if grep -Eiq 'This app has gone to sleep|app is in the oven|app has gone over its resource limits' /tmp/site-response.html; then
-            echo "::warning::Streamlit returned a hibernation or resource page"
+          if grep -Eiq 'This app has gone to sleep|app is in the oven|app has gone over its resource limits|Would you like to wake it back up|Zzzz' /tmp/site-response.html; then
+            echo "::error::Streamlit is sleeping or unavailable"
+            exit 1
           fi

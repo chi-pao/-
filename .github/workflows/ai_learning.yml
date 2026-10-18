@@ -61,11 +61,50 @@ jobs:
             git commit -m "Record autonomous learning history"
             git push
           fi
+      # A previously inspected 2026 dataset must never silently become a "fresh" holdout.
+      # The owner must independently verify provenance and register the exact CSV hash
+      # as a repository secret. Without it, research still runs; promotion is disabled.
       - name: Check independently held-out evaluation data
         id: holdout
         shell: bash
+        env:
+          INDEPENDENT_HOLDOUT_SHA256: ${{ secrets.INDEPENDENT_HOLDOUT_SHA256 }}
         run: |
-          if test -s data/unused_holdout.csv && test -s models/candidates/v7_used_house_candidate.joblib && test -s models/candidates/adaptive_used_house_candidate.joblib; then
+          if [ -z "$INDEPENDENT_HOLDOUT_SHA256" ]; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Independent holdout provenance has not been approved. Promotion is blocked."
+          elif ! printf '%s' "$INDEPENDENT_HOLDOUT_SHA256" | grep -Eq '^[0-9a-fA-F]{64}
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Promote only after independent accuracy test
+        id: promotion
+        if: steps.data.outputs.available == 'true' && steps.holdout.outputs.available == 'true'
+        run: |
+          python promote_used_house.py \
+            --incumbent models/candidates/v7_used_house_candidate.joblib \
+            --challenger models/candidates/adaptive_used_house_candidate.joblib \
+            --holdout data/unused_holdout.csv \
+            --holdout-year 2026 --site .
+      - name: Commit approved artifacts only
+        if: steps.promotion.outcome == 'success'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f models/candidates/approved_used_house.joblib models/candidates/approved_used_house.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Promote independently verified used-house model"
+            git push
+          fi
+; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Invalid holdout fingerprint. Promotion is blocked."
+          elif ! test -s data/unused_holdout.csv || ! test -s models/candidates/v7_used_house_candidate.joblib || ! test -s models/candidates/adaptive_used_house_candidate.joblib; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Missing holdout or comparison model. Promotion is blocked."
+          elif [ "$(sha256sum data/unused_holdout.csv | cut -d' ' -f1)" != "$(printf '%s' "$INDEPENDENT_HOLDOUT_SHA256" | tr 'A-F' 'a-f')" ]; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Holdout fingerprint mismatch. Promotion is blocked."
+          else
             echo "available=true" >> "$GITHUB_OUTPUT"
           else
             echo "available=false" >> "$GITHUB_OUTPUT"

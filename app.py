@@ -3404,7 +3404,12 @@ if fb_submit:
                 "review_status": auto["review_status"],
             }
         )
-        st.success("送信しました。ありがとうございます。")
+        if result.get("webhook_status") == "送信済み":
+            st.success("お問い合わせを受け付けました。ありがとうございます。")
+        elif result.get("webhook_status") == "未設定":
+            st.warning("お問い合わせは一時保存されましたが、運営者への通知は未設定です。")
+        else:
+            st.warning("お問い合わせは一時保存されましたが、運営者への通知に失敗しました。")
         if auto["learning_candidate"]:
             st.caption(
                 "実価格の根拠があるため学習候補として記録しました。"
@@ -3428,8 +3433,25 @@ if admin_mode:
     if not configured_admin_password:
         st.warning("ADMIN_PASSWORD が未設定のため管理画面は無効です。")
     else:
-        entered_admin_password = st.text_input("管理者パスワード", type="password")
-        if entered_admin_password == configured_admin_password:
+        import hmac
+        import time
+        # Preserve authentication across normal Streamlit reruns, but not server restarts.
+        login_until = st.session_state.get("_admin_login_until", 0)
+        admin_authenticated = time.time() < login_until
+        if not admin_authenticated:
+            with st.form("admin_login_form"):
+                entered_admin_password = st.text_input("管理者パスワード", type="password")
+                login_clicked = st.form_submit_button("ログイン")
+            if login_clicked:
+                if hmac.compare_digest(entered_admin_password, configured_admin_password):
+                    st.session_state["_admin_login_until"] = time.time() + 12 * 3600
+                    st.rerun()
+                else:
+                    st.error("パスワードが違います。")
+        if admin_authenticated:
+            if st.button("管理者ログアウト"):
+                st.session_state.pop("_admin_login_until", None)
+                st.rerun()
             feedback_df = load_feedback()
             if feedback_df.empty:
                 st.info("お問い合わせはまだありません。")
@@ -3486,8 +3508,6 @@ if admin_mode:
                         st.caption("次回 py train_model.py 実行時に自動で読み込まれます。")
                     else:
                         st.info("学習承認済みの候補データはありません。")
-        elif entered_admin_password:
-            st.error("パスワードが違います。")
 
 # =========================================================
 # 公開サイト用フッター・規約

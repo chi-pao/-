@@ -68,7 +68,7 @@ st.markdown(
       color:white;box-shadow:0 16px 38px rgba(5,39,55,.16); }
     .hero:after { content:"";position:absolute;width:260px;height:260px;border:1px solid rgba(255,255,255,.12);
       border-radius:50%;right:-105px;bottom:-165px;pointer-events:none; }
-    .hero-logo { width:88px;height:88px;object-fit:cover;border-radius:27px;flex:0 0 auto;
+    .hero-logo { width:190px;height:190px;object-fit:cover;border-radius:36px;flex:0 0 auto;
       border:3px solid rgba(255,255,255,.28);box-shadow:0 10px 25px rgba(0,0,0,.18); }
     .hero-copy { position:relative;z-index:1;min-width:0; }
     .hero-badge { display:inline-block;padding:.36rem .75rem;border:1px solid rgba(255,255,255,.35);
@@ -120,7 +120,7 @@ st.markdown(
     @media(max-width:768px) {
       .block-container { padding-left:.85rem;padding-right:.85rem;padding-top:.75rem; }
       .hero { padding:1.4rem 1.2rem;gap:.9rem;border-radius:19px;align-items:flex-start; }
-      .hero-logo { width:69px;height:69px;border-radius:16px; }
+      .hero-logo { width:110px;height:110px;border-radius:23px; }
       .hero-title { font-size:1.55rem; }
       .hero-subtitle { font-size:.89rem;line-height:1.65; }
       .hero-badge { font-size:.71rem; }
@@ -173,6 +173,13 @@ st.markdown(
       <div class="trust-chip">📍 地域・面積・築年を考慮</div>
       <div class="trust-chip">📊 取引データを活用した参考価格</div>
     </div>
+    <section id="service-guide" class="footer-feature" style="margin:18px 0 22px;scroll-margin-top:18px;">
+      <div style="font-size:1.12rem;font-weight:850;margin-bottom:8px;">🔎 このサービスのしくみ</div>
+      <div><strong>① 物件情報を入力</strong> — 所在地・物件種別・面積・築年数などを入力します。</div>
+      <div><strong>② AIが参考価格を推定</strong> — 学習済みの不動産取引データと物件条件から統計的に計算します。</div>
+      <div><strong>③ 売出価格と比較</strong> — 入力した価格との差や、購入前に確認したい点を表示します。</div>
+      <small>※参考価格は目安です。実際の成約価格や不動産鑑定評価を保証するものではありません。</small>
+    </section>
     <div class="steps">
       <a href="#step1-input" style="text-decoration:none;color:inherit;display:block;">
         <div class="step"><div class="step-no">STEP 01</div><div class="step-title">物件情報を入力</div>
@@ -3256,7 +3263,6 @@ st.caption(
 # =========================================================
 # 公開サイトの説明・研究の透明性
 # =========================================================
-st.markdown('<div id="service-guide"></div>', unsafe_allow_html=True)
 st.markdown("## このサービスで分かること")
 st.markdown(
     """

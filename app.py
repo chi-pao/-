@@ -3309,13 +3309,13 @@ st.link_button(
 )
 st.caption("一般のお問い合わせ・返信希望のご連絡は上のフォームをご利用ください。下の入力欄は物件価格やサイト改善の報告用です。")
 st.caption(
-    "一般のご意見・価格差の報告・不具合・法人や提携のご相談まで、"
-    "窓口は1つにまとめています。内容は裏側で分類し、学習候補は管理者確認後にのみ利用します。"
+    "以下は物件価格・データ精度の改善報告用です。正式なお問い合わせや返信希望のご連絡は上のGoogleフォームをご利用ください。"
+    "この報告欄は現在一時保存のみで、運営者への通知や長期保存は保証されません。"
 )
 
 with st.form("feedback_form", clear_on_submit=True):
     fb_category = st.selectbox(
-        "お問い合わせ種別",
+        "報告の種類",
         [
             "価格精度について",
             "住所・地域データについて",
@@ -3376,7 +3376,7 @@ with st.form("feedback_form", clear_on_submit=True):
         fb_email = st.text_input("メールアドレス（返信希望の場合）")
         fb_reply = st.checkbox("返信を希望する")
 
-    fb_submit = st.form_submit_button("送信する", use_container_width=True)
+    fb_submit = st.form_submit_button("価格・改善報告を送信", use_container_width=True)
 
 if fb_submit:
     if not str(fb_message or "").strip():
@@ -3413,9 +3413,9 @@ if fb_submit:
         if result.get("webhook_status") == "送信済み":
             st.success("お問い合わせを受け付けました。ありがとうございます。")
         elif result.get("webhook_status") == "未設定":
-            st.warning("お問い合わせは一時保存されましたが、運営者への通知は未設定です。")
+            st.warning("改善報告は一時保存のみです。確実に届けたい場合は上のGoogleフォームから送信してください。")
         else:
-            st.warning("お問い合わせは一時保存されましたが、運営者への通知に失敗しました。")
+            st.warning("改善報告の外部送信に失敗しました。確実に届けたい場合は上のGoogleフォームから送信してください。")
         if auto["learning_candidate"]:
             st.caption(
                 "実価格の根拠があるため学習候補として記録しました。"

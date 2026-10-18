@@ -61,7 +61,7 @@ jobs:
             git commit -m "Record autonomous learning history"
             git push
           fi
-      # A previously inspected 2026 dataset must never silently become a "fresh" holdout.
+      # 2025/2026 data were inspected in prior research and cannot be a fresh holdout.
       # The owner must independently verify provenance and register the exact CSV hash
       # as a repository secret. Without it, research still runs; promotion is disabled.
       - name: Check independently held-out evaluation data
@@ -93,7 +93,7 @@ jobs:
             --incumbent models/candidates/v7_used_house_candidate.joblib \
             --challenger models/candidates/adaptive_used_house_candidate.joblib \
             --holdout data/unused_holdout.csv \
-            --holdout-year 2026 --site .
+            --holdout-year 2027 --site .
       - name: Commit approved artifacts only
         if: steps.promotion.outcome == 'success'
         run: |

@@ -87,7 +87,15 @@ def classify_feedback(category: str, message: str, actual_price=None, actual_pri
 
 
 def _webhook_url() -> str:
-    return os.environ.get("FEEDBACK_WEBHOOK_URL", "").strip()
+    # Streamlit Community Cloud secrets are not exported as environment variables.
+    url = os.environ.get("FEEDBACK_WEBHOOK_URL", "").strip()
+    if url:
+        return url
+    try:
+        import streamlit as st
+        return str(st.secrets.get("FEEDBACK_WEBHOOK_URL", "")).strip()
+    except (ImportError, FileNotFoundError, KeyError, AttributeError):
+        return ""
 
 
 def save_feedback(record: dict) -> dict:

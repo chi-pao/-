@@ -1956,6 +1956,14 @@ if _ocr_value:
         p = _ocr_number(r"(?:販売価格|物件価格|売出価格|価格)[^0-9]{0,45}([0-9,]+(?:\.[0-9]+)?)\s*万円")
         if p is None:
             p = _ocr_number(r"(?<![0-9])([0-9,]+(?:\.[0-9]+)?)\s*万円")
+        if p is None:
+            for _line in raw.splitlines():
+                _match = re.search(r"(?<![0-9])([1-9][0-9,]{2,5})[ \\t]*(?:5H|万H|5円)", _line, re.I)
+                if _match:
+                    _candidate = float(_match.group(1).replace(",", ""))
+                    if 100 <= _candidate <= 100000:
+                        p = _candidate
+                        break
         if p is not None and p > 0:
             st.session_state["target_price"] = p
             updated.append("価格")

@@ -1984,8 +1984,13 @@ if _ocr_value:
                     continue
                 _tail = _line[_label_match.end():]
                 _match = re.search(_area_num, _tail, re.I)
-                if not _match and _idx + 1 < len(_ocr_lines):
-                    _match = re.search(r"^\s*" + _area_num, _ocr_lines[_idx + 1], re.I)
+                if not _match:
+                    for _next_line in _ocr_lines[_idx + 1:_idx + 3]:
+                        if re.search(r"土地|敷地|建物|延床|専有|価格|所在地|住所|間取り", _next_line):
+                            break
+                        _match = re.search(_area_num, _next_line, re.I)
+                        if _match:
+                            break
                 if _match:
                     _value = float(_match.group(1).replace(",", "."))
                     break

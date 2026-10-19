@@ -71,7 +71,7 @@ st.markdown(
       color:white;box-shadow:0 16px 38px rgba(5,39,55,.16); }
     .hero:after { content:"";position:absolute;width:260px;height:260px;border:1px solid rgba(255,255,255,.12);
       border-radius:50%;right:-105px;bottom:-165px;pointer-events:none; }
-    .hero-logo { width:220px;height:220px;object-fit:contain;border-radius:0;flex:0 0 auto;
+    .hero-logo { width:220px;height:220px;min-width:220px;object-fit:contain;border-radius:0;flex:0 0 auto;
   border:none;box-shadow:none;background:transparent; }
     .hero-copy { position:relative;z-index:1;min-width:0; }
     .hero-badge { display:inline-block;padding:.36rem .75rem;border:1px solid rgba(255,255,255,.35);
@@ -124,7 +124,7 @@ st.markdown(
       .block-container { padding-left:.85rem;padding-right:.85rem;padding-top:.75rem; }
       .hero { padding:1.4rem 1.2rem;gap:.9rem;border-radius:19px;align-items:flex-start; }
        .hero { flex-direction:column;align-items:stretch;padding:1rem; }
-      .hero-logo { width:100px !important;height:100px !important;min-width:0 !important;max-width:100% !important; }
+      .hero-logo { width:clamp(150px, 46vw, 220px) !important;height:clamp(150px, 46vw, 220px) !important;min-width:150px !important;max-width:220px !important;object-fit:contain !important;align-self:center; }
       .hero-title { font-size:1.55rem; }
       .hero-copy { width:100%; }
       .site-topbar { flex-wrap:wrap; }
@@ -1890,6 +1890,21 @@ if "api_ready_architecture" not in st.session_state:
 
 
 # =========================================================
+st.markdown('<div id="service-guide"></div>', unsafe_allow_html=True)
+st.markdown("## 買いたい方・売りたい方、どちらも利用できます")
+st.info("🔎 買いたい方：売出価格と参考価格を比較。 🏡 売りたい方：売出価格を決める参考に。")
+st.markdown(
+    """
+    <div class="footer-feature">
+      <strong>参考価格を知る</strong> — 学習済みAIが物件条件から参考価格を計算します。<br>
+      <strong>売出価格と比較する</strong> — 入力した販売価格との差を可視化します。<br>
+      <strong>見落としを減らす</strong> — 築古・低価格・広い土地など、注意したい条件を案内します。<br>
+      <small>※表示価格は統計的な目安であり、正式な鑑定評価・買取保証ではありません。</small>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
 # 入力方法：手入力を本体、URL自動入力を補助機能として扱う
 # =========================================================
 
@@ -3364,20 +3379,6 @@ st.caption(
 # =========================================================
 # 公開サイトの説明・研究の透明性
 # =========================================================
-st.markdown('<div id="service-guide"></div>', unsafe_allow_html=True)
-st.markdown("## 買いたい方・売りたい方、どちらも利用できます")
-st.info("🔎 買いたい方：売出価格と参考価格を比較。 🏡 売りたい方：売出価格を決める参考に。")
-st.markdown(
-    """
-    <div class="footer-feature">
-      <strong>参考価格を知る</strong> — 学習済みAIが物件条件から参考価格を計算します。<br>
-      <strong>売出価格と比較する</strong> — 入力した販売価格との差を可視化します。<br>
-      <strong>見落としを減らす</strong> — 築古・低価格・広い土地など、注意したい条件を案内します。<br>
-      <small>※表示価格は統計的な目安であり、正式な鑑定評価・買取保証ではありません。</small>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
 with st.expander("🧪 AI研究V4の進捗と公開版の違い"):
     st.write(
         "2024年の研究比較では、V3の比較対象モデルの誤差中央値22.70%に対し、"

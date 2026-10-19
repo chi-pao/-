@@ -1982,6 +1982,8 @@ if _ocr_value:
         m = re.search(r"(?:完成時期|完成年月|築年月|築年|建築年)[^0-9]{0,65}((?:19|20)\d{2})", raw, re.S)
         if not m:
             m = re.search(r"(?m)^\s*((?:19|20)\d{2})\s*年\s*\d{1,2}\s*月", raw)
+        if not m:
+            m = re.search(r"(?<![0-9])((?:19|20)[0-9]{2})[ \\t]*(?:年|\\/|\\.)[ \\t]*(?:0?[1-9]|1[0-2])", raw)
         if m and 1900 <= int(m.group(1)) <= datetime.now().year:
             st.session_state["target_age"] = int(m.group(1))
             updated.append("築年")

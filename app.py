@@ -1968,14 +1968,15 @@ if _ocr_value:
             st.session_state["target_price"] = p
             updated.append("価格")
 
-        # ラベルと値の距離を限定し、表の隣の列の数値を拾わない。
+        # OCRの表は列ごとに分断されるため、ラベル位置と数値の近さで抽出する。
         _ocr_lines = [line.strip() for line in raw.splitlines() if line.strip()]
         _area_patterns = [
-            (r"土地\s*面積|敷地\s*面積", "house_land_area_input", "土地面積"),
-            (r"建物\s*面積|延床\s*面積", "house_building_area_input", "建物面積"),
-            (r"専有\s*面積", "condo_area_input", "専有面積"),
+            (r"土地\\s*面積|敷地\\s*面積", "house_land_area_input", "土地面積"),
+            (r"建物\\s*面積|延床\\s*面積", "house_building_area_input", "建物面積"),
+            (r"専有\\s*面積", "condo_area_input", "専有面積"),
         ]
-        _area_num = r"([0-9]{2,4}(?:[.,][0-9]{1,3})?)\s*(?:㎡|m2|m²|平方メートル)"
+        _area_num = r"([0-9]{2,4}(?:[.,][0-9]{1,3})?)\\s*(?:㎡|m2|m²|平方メートル)"
+        _found_areas = {}
         for _label, _key, _name in _area_patterns:
             _value = None
             for _idx, _line in enumerate(_ocr_lines):
@@ -1983,9 +1984,12 @@ if _ocr_value:
                 if not _label_match:
                     continue
                 _tail = _line[_label_match.end():]
+                _next_label = re.search(r"土地\\s*面積|敷地\\s*面積|建物\\s*面積|延床\\s*面積|専有\\s*面積|間取り|築年月|完成年月", _tail)
+                if _next_label:
+                    _tail = _tail[:_next_label.start()]
                 _match = re.search(_area_num, _tail, re.I)
                 if not _match:
-                    for _next_line in _ocr_lines[_idx + 1:_idx + 3]:
+                    for _next_line in _ocr_lines[_idx + 1:_idx + 4]:
                         if re.search(r"土地|敷地|建物|延床|専有|価格|所在地|住所|間取り", _next_line):
                             break
                         _match = re.search(_area_num, _next_line, re.I)
@@ -1996,7 +2000,16 @@ if _ocr_value:
                     break
             if _value is not None and 10 <= _value <= 10000:
                 st.session_state[_key] = _value
+                _found_areas[_name] = _value
                 updated.append(_name)
+        # 建物面積ラベルがOCRで欠落したとき、土地面積以外の㎡値を補完。
+        if "土地面積" in _found_areas and "建物面積" not in _found_areas:
+            _all_areas = [float(x.replace(",", ".")) for x in re.findall(_area_num, raw, re.I)]
+            _other_areas = [x for x in _all_areas if 20 <= x <= 500 and abs(x - _found_areas["土地面積"]) > 1]
+            _unique = list(dict.fromkeys(_other_areas))
+            if len(_unique) == 1:
+                st.session_state["house_building_area_input"] = _unique[0]
+                updated.append("建物面積")
 
         m = re.search(r"(?:完成時期|完成年月|築年月|築年|建築年|築年数)[^0-9\n]{0,35}((?:19|20)\d{2})", raw)
         if not m:

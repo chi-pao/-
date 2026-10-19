@@ -2042,7 +2042,17 @@ if _ocr_value:
                         st.session_state.pop(_key, None)
                 updated.append("所在地")
 
-        if "土地面積" in updated and "建物面積" in updated:
+        # 価格のOCRでは「万円」が欠落し「1740万 円」のように分断されることがある。
+        if "価格" not in updated:
+            _price_candidates = re.findall(r"(?<![0-9])([1-9][0-9,]{2,5})\\s*(?:万\\s*円|万円|万\\s*H|万\\s*目)", raw)
+            for _candidate_text in _price_candidates:
+                _candidate = float(_candidate_text.replace(",", ""))
+                if 100 <= _candidate <= 100000:
+                    st.session_state["target_price"] = _candidate
+                    updated.append("価格")
+                    break
+
+        if "土地面積" in updated and ("築年" in updated or "建物面積" in updated):
             st.session_state["target_type"] = "中古戸建て"
             updated.append("物件種別")
 

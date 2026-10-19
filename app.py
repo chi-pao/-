@@ -1971,11 +1971,11 @@ if _ocr_value:
         # ラベルと値の距離を限定し、表の隣の列の数値を拾わない。
         _ocr_lines = [line.strip() for line in raw.splitlines() if line.strip()]
         _area_patterns = [
-            (r"土地\\s*面積|敷地\\s*面積", "house_land_area_input", "土地面積"),
-            (r"建物\\s*面積|延床\\s*面積", "house_building_area_input", "建物面積"),
-            (r"専有\\s*面積", "condo_area_input", "専有面積"),
+            (r"土地\s*面積|敷地\s*面積", "house_land_area_input", "土地面積"),
+            (r"建物\s*面積|延床\s*面積", "house_building_area_input", "建物面積"),
+            (r"専有\s*面積", "condo_area_input", "専有面積"),
         ]
-        _area_num = r"([0-9]{2,4}(?:[.,][0-9]{1,3})?)\\s*(?:㎡|m2|m²|平方メートル)"
+        _area_num = r"([0-9]{2,4}(?:[.,][0-9]{1,3})?)\s*(?:㎡|m2|m²|平方メートル)"
         for _label, _key, _name in _area_patterns:
             _value = None
             for _idx, _line in enumerate(_ocr_lines):
@@ -1985,7 +1985,7 @@ if _ocr_value:
                 _tail = _line[_label_match.end():]
                 _match = re.search(_area_num, _tail, re.I)
                 if not _match and _idx + 1 < len(_ocr_lines):
-                    _match = re.search(r"^\\s*" + _area_num, _ocr_lines[_idx + 1], re.I)
+                    _match = re.search(r"^\s*" + _area_num, _ocr_lines[_idx + 1], re.I)
                 if _match:
                     _value = float(_match.group(1).replace(",", "."))
                     break
@@ -1997,9 +1997,9 @@ if _ocr_value:
         if not m:
             m = re.search(r"(?m)^\s*((?:19|20)\d{2})\s*年\s*\d{1,2}\s*月", raw)
         if not m:
-            m = re.search(r"(?<![0-9])((?:19|20)[0-9]{2})[ \\t]*(?:年|\\/|\\.)[ \\t]*(?:0?[1-9]|1[0-2])", raw)
+            m = re.search(r"(?<![0-9])((?:19|20)[0-9]{2})[ \t]*(?:年|\/|\.)[ \t]*(?:0?[1-9]|1[0-2])", raw)
         if not m:
-            _dates = re.findall(r"((?:19|20)[0-9]{2})\\s*年\\s*(?:0?[1-9]|1[0-2])\\s*月", raw)
+            _dates = re.findall(r"((?:19|20)[0-9]{2})\s*年\s*(?:0?[1-9]|1[0-2])\s*月", raw)
             _old_dates = [y for y in _dates if int(y) < datetime.now().year - 2]
             if len(set(_old_dates)) == 1:
                 m = re.match(r"([0-9]{4})", _old_dates[0])
@@ -2024,7 +2024,7 @@ if _ocr_value:
                 updated.append("所在地")
 
         if "所在地" not in updated:
-            _address = re.search(r"(?:北海道|東京都|京都府|大阪府|.{2,3}県)[^\\n]{0,55}(?:市|区|町|村)[^\\n]{0,45}", raw)
+            _address = re.search(r"(?:北海道|東京都|京都府|大阪府|.{2,3}県)[^\n]{0,55}(?:市|区|町|村)[^\n]{0,45}", raw)
             if _address:
                 _value = _address.group().strip()
                 if _value != st.session_state.get("pending_auto_address", ""):
@@ -2048,7 +2048,7 @@ if _ocr_value:
 
         # 数値が読み取れてもラベルが崩れた場合、面積の単位を手がかりにする。
         if "土地面積" not in updated and "建物面積" not in updated and "専有面積" not in updated:
-            _areas = re.findall(r"(?<![0-9])([0-9]{2,4}(?:[.,][0-9]{1,3})?)\\s*(?:m2|m²|㎡)", raw, re.I)
+            _areas = re.findall(r"(?<![0-9])([0-9]{2,4}(?:[.,][0-9]{1,3})?)\s*(?:m2|m²|㎡)", raw, re.I)
             _areas = [float(x.replace(",", ".")) for x in _areas if 10 <= float(x.replace(",", ".")) <= 10000]
             if len(_areas) == 1 and st.session_state.get("target_type") == "中古マンション":
                 st.session_state["condo_area_input"] = _areas[0]

@@ -1998,7 +1998,7 @@ if _ocr_value:
                 st.session_state[_key] = _value
                 updated.append(_name)
 
-        m = re.search(r"(?:完成時期|完成年月|築年月|築年|建築年)[^0-9\n]{0,35}((?:19|20)\d{2})", raw)
+        m = re.search(r"(?:完成時期|完成年月|築年月|築年|建築年|築年数)[^0-9\n]{0,35}((?:19|20)\d{2})", raw)
         if not m:
             m = re.search(r"(?m)^\s*((?:19|20)\d{2})\s*年\s*\d{1,2}\s*月", raw)
         if not m:
@@ -2061,13 +2061,14 @@ if _ocr_value:
             if len(_areas) == 1 and st.session_state.get("target_type") == "中古マンション":
                 st.session_state["condo_area_input"] = _areas[0]
                 updated.append("専有面積")
-        _layout_match = re.search(r"(?<![0-9])([1-9])\\s*(LDK|DK|K|R)\\s*(?:[+＋]\\s*S)?", raw, re.I)
+        _layout_match = re.search(r"(?<![0-9])([1-9])\s*(LDK|DK|K|R)\s*(?:[+＋]\s*S)?", raw, re.I)
         if _layout_match:
             _layout = _layout_match.group(1) + _layout_match.group(2).upper()
             if _layout in ("1R", "1K", "1DK", "1LDK", "2K", "2DK", "2LDK",
                            "3K", "3DK", "3LDK", "4K", "4DK", "4LDK"):
                 st.session_state["layout_choice"] = _layout
                 updated.append("間取り")
+        st.session_state["_ocr_last_updated"] = list(updated)
         if updated:
             st.success("自動反映：" + "・".join(updated) + "。下の入力欄を確認してください。")
         else:

@@ -2027,6 +2027,13 @@ if _ocr_value:
             st.session_state["target_type"] = "中古戸建て"
             updated.append("物件種別")
 
+        # 数値が読み取れてもラベルが崩れた場合、面積の単位を手がかりにする。
+        if "土地面積" not in updated and "建物面積" not in updated and "専有面積" not in updated:
+            _areas = re.findall(r"(?<![0-9])([0-9]{2,4}(?:[.,][0-9]{1,3})?)\\s*(?:m2|m²|㎡)", raw, re.I)
+            _areas = [float(x.replace(",", ".")) for x in _areas if 10 <= float(x.replace(",", ".")) <= 10000]
+            if len(_areas) == 1 and st.session_state.get("target_type") == "中古マンション":
+                st.session_state["condo_area_input"] = _areas[0]
+                updated.append("専有面積")
         if updated:
             st.success("自動反映：" + "・".join(updated) + "。下の入力欄を確認してください。")
         else:

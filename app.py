@@ -73,7 +73,7 @@ st.markdown(
       border-radius:50%;right:-105px;bottom:-165px;pointer-events:none; }
     .hero-logo { width:220px;height:220px;min-width:220px;object-fit:contain;border-radius:0;flex:0 0 auto;
   border:none;box-shadow:none;background:transparent; }
-    .hero-logo-frame { width:220px !important;height:220px !important;min-width:220px !important;flex:0 0 220px !important;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:18px; }\n    .hero-logo-frame .hero-logo { width:100% !important;height:100% !important;min-width:0 !important;max-width:none !important;max-height:none !important;object-fit:cover !important;transform:scale(2.6); }\n    .hero-copy { position:relative;z-index:1;min-width:0; }
+    .hero-logo-frame { width:220px !important;height:220px !important;min-width:220px !important;flex:0 0 220px !important;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:18px; }\n    .hero-logo-frame .hero-logo { width:100% !important;height:100% !important;min-width:0 !important;max-width:none !important;max-height:none !important;object-fit:contain !important;transform:none; }\n    .hero-copy { position:relative;z-index:1;min-width:0; }
     .hero-badge { display:inline-block;padding:.36rem .75rem;border:1px solid rgba(255,255,255,.35);
       border-radius:999px;background:rgba(255,255,255,.09);font-size:.82rem;letter-spacing:.03em;margin-bottom:.7rem; }
     .hero-title { color:white;font-size:clamp(1.5rem,2.5vw,2.1rem);line-height:1.23;
@@ -167,7 +167,7 @@ st.markdown(
            <a href="#service-guide">サービスについて</a></div>
     </div>
     <section class="hero">
-    <div class="hero-logo-frame"><img class="hero-logo" src="data:image/png;base64,{APP_ICON_BASE64}" alt="お買い得物件チェッカーのロゴ" style="width:100% !important;height:100% !important;max-width:none !important;max-height:none !important;object-fit:cover !important;transform:scale(2.6) !important;display:block !important;"></div>
+    <div class="hero-logo-frame"><img class="hero-logo" src="data:image/png;base64,{APP_ICON_BASE64}" alt="お買い得物件チェッカーのロゴ" style="width:100% !important;height:100% !important;max-width:none !important;max-height:none !important;object-fit:contain !important;transform:none !important;display:block !important;"></div>
       <div class="hero-copy">
         <div class="hero-badge">購入にも売却にも、価格のものさしを。</div>
         <h1 class="hero-title">買う前も、売る前も。<br>AIで価格をチェック。</h1>

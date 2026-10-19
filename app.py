@@ -6,6 +6,9 @@ import json
 from datetime import datetime
 from pathlib import Path
 import base64
+import csv
+import io
+import zipfile
 import joblib
 import numpy as np
 import requests
@@ -68,8 +71,8 @@ st.markdown(
       color:white;box-shadow:0 16px 38px rgba(5,39,55,.16); }
     .hero:after { content:"";position:absolute;width:260px;height:260px;border:1px solid rgba(255,255,255,.12);
       border-radius:50%;right:-105px;bottom:-165px;pointer-events:none; }
-    .hero-logo { width:190px;height:190px;object-fit:cover;border-radius:36px;flex:0 0 auto;
-      border:3px solid rgba(255,255,255,.28);box-shadow:0 10px 25px rgba(0,0,0,.18); }
+    .hero-logo { width:220px;height:220px;object-fit:contain;border-radius:0;flex:0 0 auto;
+  border:none;box-shadow:none;background:transparent; }
     .hero-copy { position:relative;z-index:1;min-width:0; }
     .hero-badge { display:inline-block;padding:.36rem .75rem;border:1px solid rgba(255,255,255,.35);
       border-radius:999px;background:rgba(255,255,255,.09);font-size:.82rem;letter-spacing:.03em;margin-bottom:.7rem; }
@@ -120,8 +123,16 @@ st.markdown(
     @media(max-width:768px) {
       .block-container { padding-left:.85rem;padding-right:.85rem;padding-top:.75rem; }
       .hero { padding:1.4rem 1.2rem;gap:.9rem;border-radius:19px;align-items:flex-start; }
-      .hero-logo { width:110px;height:110px;border-radius:23px; }
+       .hero { flex-direction:column;align-items:stretch;padding:1rem; }
+      .hero-logo { width:100px !important;height:100px !important;min-width:0 !important;max-width:100% !important; }
       .hero-title { font-size:1.55rem; }
+      .hero-copy { width:100%; }
+      .site-topbar { flex-wrap:wrap; }
+      .stTextInput input,.stTextArea textarea { font-size:16px !important; }
+      [data-testid="stHorizontalBlock"] { gap:.35rem; }
+      .stButton button { padding-left:.25rem;padding-right:.25rem;white-space:normal;overflow-wrap:anywhere; }
+      .property-card,.result-card { padding:1rem; }
+      html,body,.stApp { overflow-x:hidden; }
       .hero-subtitle { font-size:.89rem;line-height:1.65; }
       .hero-badge { font-size:.71rem; }
       .hero-actions { gap:8px; }
@@ -137,7 +148,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-logo_path = Path(__file__).resolve().parent / "logo.png"
+logo_path = Path(__file__).resolve().parent / "app_icon.png"
 
 if logo_path.is_file():
     APP_ICON_BASE64 = base64.b64encode(
@@ -156,7 +167,7 @@ st.markdown(
            <a href="#service-guide">サービスについて</a></div>
     </div>
     <section class="hero">
-    <img class="hero-logo" src="data:image/png;base64,{APP_ICON_BASE64}" alt="ロゴ">
+    <img class="hero-logo" src="data:image/png;base64,{APP_ICON_BASE64}" alt="ロゴ" >
       <div class="hero-copy">
         <div class="hero-badge">住まい選びに、価格のものさしを。</div>
         <h1 class="hero-title">その物件価格、<br>AIで確かめよう。</h1>
@@ -164,6 +175,7 @@ st.markdown(
           物件の条件と地域情報をもとに、売出価格との差をわかりやすく表示します。</div>
         <div class="hero-actions">
           <a class="hero-action" href="#step1-input">無料で価格をチェック →</a>
+          <a class="hero-action secondary" href="#service-guide">しくみを見る</a>
         </div>
       </div>
     </section>
@@ -172,13 +184,6 @@ st.markdown(
       <div class="trust-chip">📍 地域・面積・築年を考慮</div>
       <div class="trust-chip">📊 取引データを活用した参考価格</div>
     </div>
-    <section id="service-guide" class="footer-feature" style="margin:18px 0 22px;scroll-margin-top:18px;">
-      <div style="font-size:1.12rem;font-weight:850;margin-bottom:8px;">🔎 このサービスのしくみ</div>
-      <div><strong>① 物件情報を入力</strong> — 所在地・物件種別・面積・築年数などを入力します。</div>
-      <div><strong>② AIが参考価格を推定</strong> — 学習済みの不動産取引データと物件条件から統計的に計算します。</div>
-      <div><strong>③ 売出価格と比較</strong> — 入力した価格との差や、購入前に確認したい点を表示します。</div>
-      <small>※参考価格は目安です。実際の成約価格や不動産鑑定評価を保証するものではありません。</small>
-    </section>
     <div class="steps">
       <a href="#step1-input" style="text-decoration:none;color:inherit;display:block;">
         <div class="step"><div class="step-no">STEP 01</div><div class="step-title">物件情報を入力</div>
@@ -687,38 +692,34 @@ def _load_v7_candidate_cached(path_string, modified_ns):
 
 
 def load_v7_candidate():
-    # Use an approved model only when its checksum and metadata are valid.
-    # Otherwise retain the existing V7 model as a rollback.
-    approval_path = V7_DIR / "approved_used_house.json"
-    if approval_path.is_file():
-        try:
-            import hashlib
-            approval = json.loads(approval_path.read_text(encoding="utf-8"))
-            approved_path = V7_DIR / "approved_used_house.joblib"
-            digest = approval.get("sha256")
-            if (approval.get("approved") is True
-                and approval.get("filename") == "approved_used_house.joblib"
-                and isinstance(digest, str) and len(digest) == 64
-                and approved_path.is_file()
-                and hashlib.sha256(approved_path.read_bytes()).hexdigest() == digest):
-                approved = _load_v7_candidate_cached(
-                    str(approved_path), approved_path.stat().st_mtime_ns
-                )
-                if (isinstance(approved, dict)
-                    and approved.get("model_key") == "used_house"
-                    and approved.get("target_unit") == "yen"
-                    and approved.get("feature_columns")
-                    and hasattr(approved.get("pipeline"), "predict")):
-                    return approved
-        except (OSError, ValueError, TypeError, KeyError, ImportError):
-            pass
-    # Never fall back to an unapproved research candidate in automatic mode.
-    if read_used_house_mode() != "v7":
-        return None
     candidate_path = V7_DIR / "v7_used_house_candidate.joblib"
     if not candidate_path.is_file():
         return None
     return _load_v7_candidate_cached(str(candidate_path), candidate_path.stat().st_mtime_ns)
+
+
+# 精度検証を通過して正式採用したAIだけを読む。研究途中のAIは読まない。
+@st.cache_resource(show_spinner=False)
+def _load_approved_used_house_cached(path_string, modified_ns):
+    return joblib.load(path_string)
+
+
+def load_approved_used_house():
+    approved_path = MODEL_DIR / "approved_used_house.joblib"
+    if not approved_path.is_file():
+        return None
+    bundle = _load_approved_used_house_cached(
+        str(approved_path), approved_path.stat().st_mtime_ns
+    )
+    if not isinstance(bundle, dict):
+        raise ValueError("採用済みAIの保存形式が不正です")
+    if bundle.get("model_key") != "used_house" or bundle.get("target_unit") != "yen":
+        raise ValueError("採用済みAIの物件種別または価格単位が違います")
+    if bundle.get("approval_status") != "approved":
+        raise ValueError("精度確認済みのAIではありません")
+    if not bundle.get("feature_columns") or bundle.get("pipeline") is None:
+        raise ValueError("採用済みAIの予測情報がありません")
+    return bundle
 
 
 def get_model_key(property_type):
@@ -970,8 +971,27 @@ def predict_ai_reference_price(
     revenue_num = common.get("AnnualIncome", np.nan)
     common["LogAnnualIncome"] = float(np.log1p(revenue_num)) if np.isfinite(revenue_num) and revenue_num > 0 else np.nan
 
+    # 正式採用済みAIを最優先。読めない場合は既存のV7/本番AIへ戻す。
+    if model_key == "used_house":
+        try:
+            approved = load_approved_used_house()
+            if approved is not None:
+                columns = approved["feature_columns"]
+                frame = pd.DataFrame(
+                    [{column: common.get(column, np.nan) for column in columns}],
+                    columns=columns,
+                )
+                predicted_yen = float(approved["pipeline"].predict(frame)[0])
+                if not np.isfinite(predicted_yen) or predicted_yen <= 0:
+                    raise ValueError("採用済みAIの予測値が不正です")
+                approved_display = dict(approved)
+                approved_display["display_name"] = "精度確認済みAI（中古戸建て）"
+                return predicted_yen / 10000.0, approved_display
+        except Exception as exc:
+            st.warning(f"採用済みAIを使用できないため従来AIに戻しました：{exc}")
+
     # V7 is available only for used detached houses. Original production models stay intact.
-    if model_key == "used_house" and ((V7_DIR / "approved_used_house.json").is_file() or read_used_house_mode() == "v7"):
+    if model_key == "used_house" and read_used_house_mode() == "v7":
         try:
             candidate = load_v7_candidate()
             if candidate is not None:
@@ -1683,31 +1703,83 @@ def _get_town_kana_converter():
         return None
 
 
+# 日本郵便の全国町域カナ（公表CSV）を優先する。漢字変換だけでは地名の固有読みを判定できない。
+_JP_POST_TOWNS_ZIP = "https://www.post.japanpost.jp/service/search/zipcode/download/utf/zip/utf_ken_all.zip"
+
+
+def _normalize_town_key(value):
+    return unicodedata.normalize("NFKC", str(value or "")).replace(" ", "").replace("　", "").strip()
+
+
+def _katakana_to_hiragana(value):
+    value = _normalize_town_key(value)
+    return "".join(chr(ord(c) - 0x60) if "ァ" <= c <= "ヶ" else c for c in value)
+
+
+@st.cache_resource(ttl=86400, show_spinner=False)
+def _load_official_town_readings():
+    """全国の郵便番号町域データを読み込む。曖昧な同名町域は勝手に決めない。"""
+    try:
+        response = requests.get(_JP_POST_TOWNS_ZIP, timeout=25,
+                                headers={"User-Agent": "PropertyChecker/1.0"})
+        response.raise_for_status()
+        if len(response.content) > 12_000_000:
+            return {}
+        with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+            csv_name = next((n for n in archive.namelist() if n.lower().endswith(".csv")), None)
+            if not csv_name:
+                return {}
+            with archive.open(csv_name) as raw:
+                records = csv.reader(io.TextIOWrapper(raw, encoding="utf-8-sig", newline=""))
+                readings = {}
+                for row in records:
+                    if len(row) < 9:
+                        continue
+                    code = str(row[0]).zfill(5)[:5]
+                    name = _normalize_town_key(row[8])
+                    kana = _katakana_to_hiragana(row[5])
+                    if not name or not kana or "以下に掲載がない" in name:
+                        continue
+                    readings.setdefault((code, name), set()).add(kana)
+        return {key: next(iter(values)) for key, values in readings.items() if len(values) == 1}
+    except (requests.RequestException, OSError, ValueError, zipfile.BadZipFile, UnicodeError, StopIteration):
+        return {}
+
+
 @lru_cache(maxsize=30000)
-def _town_name_reading(town_name):
-    name = unicodedata.normalize("NFKC", str(town_name or "").strip())
+def _town_name_reading(town_name, city_code=""):
+    name = _normalize_town_key(town_name)
     if not name:
         return ""
+    # 同じ町名でも市区町村により読みが違うため、自治体コードと組で照合する。
+    code = str(city_code or "").zfill(5)[:5]
+    official = _load_official_town_readings() if city_code else {}
+    reading = official.get((code, name))
+    if reading:
+        return reading
+    # 住所マスタ側の表記が「大字」「字」を含む場合の一致を確認する。
+    for prefix in ("大字", "字"):
+        if name.startswith(prefix):
+            reading = official.get((code, name[len(prefix):]))
+            if reading:
+                return reading
     converter = _get_town_kana_converter()
-    reading = name
     if converter is not None:
         try:
-            pieces = converter.convert(name)
-            reading = "".join(p.get("hira", p.get("orig", "")) for p in pieces)
-        except Exception:
-            reading = name
-    return unicodedata.normalize("NFKC", reading).strip()
+            return _katakana_to_hiragana("".join(
+                p.get("hira", p.get("orig", "")) for p in converter.convert(name)
+            ))
+        except (ValueError, TypeError, KeyError):
+            pass
+    return _katakana_to_hiragana(name)
 
 
 @lru_cache(maxsize=30000)
-def _town_name_kana_group(town_name):
-    reading = _town_name_reading(town_name)
+def _town_name_kana_group(town_name, city_code=""):
+    reading = _town_name_reading(town_name, city_code)
     if not reading:
         return "その他"
     initial = reading[0]
-    # カタカナをひらがなへ変換
-    if "ァ" <= initial <= "ヶ":
-        initial = chr(ord(initial) - 0x60)
     for group, initials in KANA_GROUPS.items():
         if initial in initials:
             return group
@@ -1724,7 +1796,7 @@ def _select_visible_town(name):
     st.session_state["address_district"] = name
 
 
-def _town_nearby_candidates(district_names, selected_group, count_each=5):
+def _town_nearby_candidates(district_names, selected_group, count_each=5, city_code=""):
     """該当行が0件のとき、五十音順で直前・直後の町名を候補にする。"""
     groups = list(KANA_GROUPS)
     if selected_group not in groups:
@@ -1734,19 +1806,19 @@ def _town_nearby_candidates(district_names, selected_group, count_each=5):
     previous = []
     following = []
     for index in range(target_index - 1, -1, -1):
-        names = [n for n in district_names if _town_name_kana_group(n) == groups[index]]
+        names = [n for n in district_names if _town_name_kana_group(n, city_code) == groups[index]]
         if names:
-            previous = sorted(names, key=lambda n: (_town_name_reading(n), n))[-count_each:]
+            previous = sorted(names, key=lambda n: (_town_name_reading(n, city_code), n))[-count_each:]
             break
     for index in range(target_index + 1, len(groups)):
-        names = [n for n in district_names if _town_name_kana_group(n) == groups[index]]
+        names = [n for n in district_names if _town_name_kana_group(n, city_code) == groups[index]]
         if names:
-            following = sorted(names, key=lambda n: (_town_name_reading(n), n))[:count_each]
+            following = sorted(names, key=lambda n: (_town_name_reading(n, city_code), n))[:count_each]
             break
     return previous + following
 
 
-def _adjacent_town_kana_group(district_names, current_group, direction):
+def _adjacent_town_kana_group(district_names, current_group, direction, city_code=""):
     """五十音の隣接する、町名が存在する行を探す（行をまたぐページ送り用）。"""
     groups = list(KANA_GROUPS)
     if current_group not in groups:
@@ -1754,12 +1826,12 @@ def _adjacent_town_kana_group(district_names, current_group, direction):
     start = groups.index(current_group)
     for index in range(start + direction, len(groups) if direction > 0 else -1, direction):
         candidate = groups[index]
-        if any(_town_name_kana_group(name) == candidate for name in district_names):
+        if any(_town_name_kana_group(name, city_code) == candidate for name in district_names):
             return candidate
     return None
 
 
-def _move_town_page(direction, page, total_pages, district_names, search_mode, selected_group, page_size=12):
+def _move_town_page(direction, page, total_pages, district_names, search_mode, selected_group, page_size=12, city_code=""):
     """同じ行のページを移動し、端では前後の五十音行に続けて移動する。"""
     new_page = page + direction
     if 0 <= new_page < total_pages:
@@ -1767,12 +1839,12 @@ def _move_town_page(direction, page, total_pages, district_names, search_mode, s
         return
     if search_mode != "五十音から探す":
         return
-    other_group = _adjacent_town_kana_group(district_names, selected_group, direction)
+    other_group = _adjacent_town_kana_group(district_names, selected_group, direction, city_code)
     if other_group is None:
         return
     st.session_state["town_kana_group"] = other_group
     if direction < 0:
-        count = sum(_town_name_kana_group(name) == other_group for name in district_names)
+        count = sum(_town_name_kana_group(name, city_code) == other_group for name in district_names)
         st.session_state["town_visible_page"] = max(0, (count - 1) // page_size)
     else:
         st.session_state["town_visible_page"] = 0
@@ -1835,22 +1907,15 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-property_url = st.text_input(
+property_url = st.text_area(
     "物件URL（任意）",
-    placeholder="goo住宅のURLなら貼り付けるだけで自動入力します",
-    key="property_url"
+    placeholder="goo住宅のURLをここに貼り付けてください",
+    key="property_url",
+    height=90,
 )
-
-fetch_url_button = False
+property_url = property_url.strip()
+fetch_url_button = st.button("URLから物件情報を読み込む", use_container_width=True, disabled=not bool(property_url))
 url_fetch_succeeded = False
-
-if property_url:
-    current_url = property_url.strip()
-    last_url_attempt = st.session_state.get("last_url_attempt", "")
-
-    if current_url != last_url_attempt:
-        fetch_url_button = True
-        st.session_state["last_url_attempt"] = current_url
 
 # =========================================================
 # サイト判定
@@ -2384,22 +2449,17 @@ with st.container(border=True):
                     )
 
         selected_kana_group = st.session_state.get("town_kana_group", "あ")
-        if _get_town_kana_converter() is None:
-            st.warning("五十音検索には pykakasi が必要です。コマンドプロンプトで py -m pip install pykakasi を実行してください。")
-            visible_districts = sorted(district_names)
+        # 住所マスタの全町名を市区町村別の公式カナで分類する。
+        # 読みが不明な町名も直接検索して選べるようにする。
+        search_town = st.text_input("町名を直接検索（読みが違う場合はこちら）", key="town_name_search")
+        if search_town.strip():
+            visible_districts = [n for n in district_names if _normalize_town_key(search_town) in _normalize_town_key(n)]
         else:
-            visible_districts = sorted(
-                (name for name in district_names if _town_name_kana_group(name) == selected_kana_group),
-                key=lambda name: (_town_name_reading(name), name),
-            )
-            st.caption(f"{selected_kana_group}行：{len(visible_districts)}件")
-            if not visible_districts:
-                nearby = _town_nearby_candidates(district_names, selected_kana_group)
-                if nearby:
-                    st.info("この行は0件です。前後の行の町名を表示しています。")
-                    visible_districts = nearby
-                else:
-                    st.info("該当する町名がありません。別の行を選んでください。")
+            visible_districts = [n for n in district_names if _town_name_kana_group(n, selected_city_code) == selected_kana_group]
+        visible_districts = sorted(visible_districts, key=lambda n: (_town_name_reading(n, selected_city_code), n))
+        st.caption(f"{len(visible_districts)}件")
+        if not visible_districts:
+            st.info("該当する町名はありません。別の行を選ぶか、町名を直接検索してください。")
 
         if visible_districts:
             st.markdown("**町名をタップして選択**")
@@ -2423,22 +2483,22 @@ with st.container(border=True):
         else:
             page_size, total_pages, page = 12, 0, 0
 
-        previous_group = _adjacent_town_kana_group(district_names, selected_kana_group, -1)
-        next_group = _adjacent_town_kana_group(district_names, selected_kana_group, 1)
+        previous_group = _adjacent_town_kana_group(district_names, selected_kana_group, -1, selected_city_code)
+        next_group = _adjacent_town_kana_group(district_names, selected_kana_group, 1, selected_city_code)
         can_previous = page > 0 or previous_group is not None
         can_next = page < total_pages - 1 or next_group is not None
         prev_col, count_col, next_col = st.columns([1, 1.2, 1])
         with prev_col:
             prev_label = f"◀ 前へ（{previous_group}行）" if page == 0 and previous_group else "◀ 前へ"
             if st.button(prev_label, disabled=not can_previous, key="town_visible_prev", use_container_width=True):
-                _move_town_page(-1, page, total_pages, district_names, "五十音から探す", selected_kana_group, page_size)
+                _move_town_page(-1, page, total_pages, district_names, "五十音から探す", selected_kana_group, page_size, selected_city_code)
                 st.rerun()
         with count_col:
             st.caption(f"{selected_kana_group}行　{page + 1 if total_pages else 0} / {total_pages}ページ")
         with next_col:
             next_label = f"次へ（{next_group}行）▶" if page >= total_pages - 1 and next_group else "次へ ▶"
             if st.button(next_label, disabled=not can_next, key="town_visible_next", use_container_width=True):
-                _move_town_page(1, page, total_pages, district_names, "五十音から探す", selected_kana_group, page_size)
+                _move_town_page(1, page, total_pages, district_names, "五十音から探す", selected_kana_group, page_size, selected_city_code)
                 st.rerun()
 
     selected_district_model = st.session_state.get("address_district", "")
@@ -3262,6 +3322,7 @@ st.caption(
 # =========================================================
 # 公開サイトの説明・研究の透明性
 # =========================================================
+st.markdown('<div id="service-guide"></div>', unsafe_allow_html=True)
 st.markdown("## このサービスで分かること")
 st.markdown(
     """
@@ -3307,18 +3368,14 @@ with st.expander("❓ よくある質問"):
 # =========================================================
 st.divider()
 st.markdown("### 💬 お問い合わせ・改善フィードバック")
-st.link_button(
-    "📩 お問い合わせはこちら（Googleフォーム）",
-    "https://docs.google.com/forms/d/e/1FAIpQLSdVgvFN8ZMQzCgC2I3S_C-Hlznkw9EYdIKGT-SNIgonbSCrzQ/viewform",
-    use_container_width=True,
+st.caption(
+    "一般のご意見・価格差の報告・不具合・法人や提携のご相談まで、"
+    "窓口は1つにまとめています。内容は裏側で分類し、学習候補は管理者確認後にのみ利用します。"
 )
-st.caption("お問い合わせ・返信希望のご連絡は上のGoogleフォームをご利用ください。")
-st.markdown("#### 🏠 物件価格・データの改善報告")
-st.caption("以下の報告欄は一時保存のみで、運営者への通知や長期保存は保証されません。確実に届けたい場合は上のGoogleフォームをご利用ください。")
 
 with st.form("feedback_form", clear_on_submit=True):
     fb_category = st.selectbox(
-        "報告の種類",
+        "お問い合わせ種別",
         [
             "価格精度について",
             "住所・地域データについて",
@@ -3379,7 +3436,7 @@ with st.form("feedback_form", clear_on_submit=True):
         fb_email = st.text_input("メールアドレス（返信希望の場合）")
         fb_reply = st.checkbox("返信を希望する")
 
-    fb_submit = st.form_submit_button("価格・改善報告を送信", use_container_width=True)
+    fb_submit = st.form_submit_button("送信する", use_container_width=True)
 
 if fb_submit:
     if not str(fb_message or "").strip():
@@ -3413,12 +3470,7 @@ if fb_submit:
                 "review_status": auto["review_status"],
             }
         )
-        if result.get("webhook_status") == "送信済み":
-            st.success("改善報告を送信しました。ありがとうございます。")
-        elif result.get("webhook_status") == "未設定":
-            st.warning("改善報告は一時保存のみです。確実に届けたい場合は上のGoogleフォームから送信してください。")
-        else:
-            st.warning("改善報告の外部送信に失敗しました。確実に届けたい場合は上のGoogleフォームから送信してください。")
+        st.success("送信しました。ありがとうございます。")
         if auto["learning_candidate"]:
             st.caption(
                 "実価格の根拠があるため学習候補として記録しました。"
@@ -3442,25 +3494,8 @@ if admin_mode:
     if not configured_admin_password:
         st.warning("ADMIN_PASSWORD が未設定のため管理画面は無効です。")
     else:
-        import hmac
-        import time
-        # Preserve authentication across normal Streamlit reruns, but not server restarts.
-        login_until = st.session_state.get("_admin_login_until", 0)
-        admin_authenticated = time.time() < login_until
-        if not admin_authenticated:
-            with st.form("admin_login_form"):
-                entered_admin_password = st.text_input("管理者パスワード", type="password")
-                login_clicked = st.form_submit_button("ログイン")
-            if login_clicked:
-                if hmac.compare_digest(entered_admin_password, configured_admin_password):
-                    st.session_state["_admin_login_until"] = time.time() + 12 * 3600
-                    st.rerun()
-                else:
-                    st.error("パスワードが違います。")
-        if admin_authenticated:
-            if st.button("管理者ログアウト"):
-                st.session_state.pop("_admin_login_until", None)
-                st.rerun()
+        entered_admin_password = st.text_input("管理者パスワード", type="password")
+        if entered_admin_password == configured_admin_password:
             feedback_df = load_feedback()
             if feedback_df.empty:
                 st.info("お問い合わせはまだありません。")
@@ -3517,6 +3552,8 @@ if admin_mode:
                         st.caption("次回 py train_model.py 実行時に自動で読み込まれます。")
                     else:
                         st.info("学習承認済みの候補データはありません。")
+        elif entered_admin_password:
+            st.error("パスワードが違います。")
 
 # =========================================================
 # 公開サイト用フッター・規約

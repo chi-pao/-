@@ -1998,7 +1998,7 @@ if _ocr_value:
             m = re.search(r"(?m)^\s*((?:19|20)\d{2})\s*年\s*\d{1,2}\s*月", raw)
         if not m:
             m = re.search(r"(?<![0-9])((?:19|20)[0-9]{2})[ \\t]*(?:年|\\/|\\.)[ \\t]*(?:0?[1-9]|1[0-2])", raw)
-        if m and 1900 <= int(m.group(1)) <= datetime.now().year and not (int(m.group(1)) == datetime.now().year and "完成" not in raw and "築" not in raw):
+        if m and 1900 <= int(m.group(1)) < datetime.now().year - 1:
             st.session_state["target_age"] = int(m.group(1))
             updated.append("築年")
 

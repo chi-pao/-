@@ -1992,9 +1992,6 @@ if _ocr_value:
             st.success("自動反映：" + "・".join(updated) + "。下の入力欄を確認してください。")
         else:
             st.warning("項目を特定できませんでした。下の『認識した文字を確認』を開いてください。")
-if st.session_state.get("_ocr_last_text"):
-    with st.expander("認識した文字を確認（うまく反映されない場合）"):
-        st.text_area("画像から読み取った文字", value=st.session_state["_ocr_last_text"], height=180, disabled=True)
 st.caption("※ 認識結果には誤りがあり得ます。画像の権利と掲載サイトの利用条件もご確認ください。")
 st.divider()
 

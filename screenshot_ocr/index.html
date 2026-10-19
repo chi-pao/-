@@ -21,7 +21,7 @@ function send(type,extra={}){window.parent.postMessage({isStreamlitMessage:true,
 send('streamlit:componentReady',{apiVersion:1});function resize(){send('streamlit:setFrameHeight',{height:document.body.scrollHeight+8})}resize();
 window.addEventListener('message',e=>{if(e.data?.type==='streamlit:render')resize()});
 pick.onclick=e=>{e.stopPropagation();file.click()};zone.onclick=e=>{if(e.target!==pick)file.click()};
-file.onchange=e=>process(e.target.files);
+file.onchange=e=>{const files=Array.from(e.target.files||[]);file.value='';process(files)};
 zone.ondragover=e=>{e.preventDefault();zone.style.background='#d7f4e9'};
 zone.ondragleave=()=>zone.style.background='';
 zone.ondrop=e=>{e.preventDefault();zone.style.background='';process(e.dataTransfer.files)};
@@ -35,7 +35,7 @@ const worker=await Tesseract.createWorker('jpn+eng');await worker.setParameters(
 try{for(let i=0;i<selected.length;i++){status.textContent='文字認識中 '+(i+1)+'/'+selected.length+'枚…';resize();const img=await createImageBitmap(selected[i]);const scale=Math.min(2.5,Math.max(1,1800/img.width));const canvas=document.createElement('canvas');canvas.width=Math.round(img.width*scale);canvas.height=Math.round(img.height*scale);const ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(img,0,0,canvas.width,canvas.height);img.close();const first=(await worker.recognize(canvas)).data.text;results.push(first);const pixels=ctx.getImageData(0,0,canvas.width,canvas.height);for(let j=0;j<pixels.data.length;j+=4){const v=.299*pixels.data[j]+.587*pixels.data[j+1]+.114*pixels.data[j+2];const contrast=v<165?Math.max(0,v*.55):Math.min(255,165+(v-165)*1.6);pixels.data[j]=pixels.data[j+1]=pixels.data[j+2]=contrast;}ctx.putImageData(pixels,0,0);await worker.setParameters({tessedit_pageseg_mode:'11'});const second=(await worker.recognize(canvas)).data.text;results.push(second)}}finally{await worker.terminate()}
 const raw=results.join('\n\n').trim();
 if(!raw){status.textContent='文字が見つかりませんでした。文字の鮮明なスクショをお試しください';return}
-status.textContent='文字認識が完了しました。抽出できた項目を下の入力欄へ反映します。';
+status.textContent='文字認識完了。下の入力欄に反映します（認識文字数：'+raw.length+'）。';preview.textContent='認識内容の先頭：'+raw.slice(0,180);resize();
 send('streamlit:setComponentValue',{value:JSON.stringify({text:raw,nonce:Date.now()})});
 }catch(err){status.textContent='読み取りに失敗しました。通信環境を確認してください：'+String(err?.message||err)}
 finally{busy=false;pick.disabled=false;resize()}}

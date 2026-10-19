@@ -1998,6 +1998,11 @@ if _ocr_value:
             m = re.search(r"(?m)^\s*((?:19|20)\d{2})\s*年\s*\d{1,2}\s*月", raw)
         if not m:
             m = re.search(r"(?<![0-9])((?:19|20)[0-9]{2})[ \\t]*(?:年|\\/|\\.)[ \\t]*(?:0?[1-9]|1[0-2])", raw)
+        if not m:
+            _dates = re.findall(r"((?:19|20)[0-9]{2})\\s*年\\s*(?:0?[1-9]|1[0-2])\\s*月", raw)
+            _old_dates = [y for y in _dates if int(y) < datetime.now().year - 2]
+            if len(set(_old_dates)) == 1:
+                m = re.match(r"([0-9]{4})", _old_dates[0])
         if m and 1900 <= int(m.group(1)) < datetime.now().year - 1:
             st.session_state["target_age"] = int(m.group(1))
             updated.append("築年")

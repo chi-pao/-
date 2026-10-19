@@ -7,21 +7,25 @@ permissions:
   contents: read
 jobs:
   availability:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Check public Streamlit endpoint
+      - name: Check Streamlit health endpoint
         shell: bash
         run: |
           set -euo pipefail
-          URL="https://okaidokucyekka.streamlit.app/"
-          code="$(curl -L -sS -o /tmp/site-response.html -w '%{http_code}' --connect-timeout 15 --max-time 60 "$URL")"
-          echo "HTTP status: $code"
-          if [ "$code" -lt 200 ] || [ "$code" -ge 400 ]; then
-            echo "::error::Site returned HTTP $code"
-            exit 1
+          URL="https://okaidokucyekka.streamlit.app/_stcore/health"
+          for attempt in 1 2 3; do
+            code="$(curl -sS -o /tmp/site-health.txt -D /tmp/site-headers.txt -w '%{http_code}' --connect-timeout 15 --max-time 40 "$URL")" || code="000"
+            echo "Attempt $attempt: HTTP $code"
+            if [ "$code" = "200" ] && grep -Eiq '^ok[[:space:]]*$' /tmp/site-health.txt; then
+              echo "Streamlit health endpoint is healthy."
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then sleep 15; fi
+          done
+          echo "::error::Streamlit health check failed (HTTP $code)."
+          if [ -f /tmp/site-headers.txt ]; then
+            grep -i '^location:' /tmp/site-headers.txt || true
           fi
-          if grep -Eiq 'This app has gone to sleep|app is in the oven|app has gone over its resource limits|Would you like to wake it back up|Zzzz' /tmp/site-response.html; then
-            echo "::error::Streamlit is sleeping or unavailable"
-            exit 1
-          fi
+          exit 1

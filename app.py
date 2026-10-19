@@ -1975,7 +1975,11 @@ if _ocr_value:
             ("専有面積", "condo_area_input", "専有面積"),
         ]:
             val = _ocr_number(r"(?:" + label + r")[^0-9]{0,70}([0-9,]+(?:\.[0-9]+)?)\s*(?:㎡|m2|m²|平方メートル)")
-            if val is not None and val > 0:
+            if val is None:
+                _area_match = re.search(r"(?:" + label + r")[^\\n]{0,40}\\n[^0-9\\n]{0,20}([0-9]{2,4}(?:[.,][0-9]{1,3})?)", raw, re.I)
+                if _area_match:
+                    val = float(_area_match.group(1).replace(",", "."))
+            if val is not None and 10 <= val <= 10000:
                 st.session_state[key] = val
                 updated.append(name)
 

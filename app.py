@@ -2004,6 +2004,17 @@ if _ocr_value:
                         st.session_state.pop(address_key, None)
                 updated.append("所在地")
 
+        if "所在地" not in updated:
+            _address = re.search(r"(?:北海道|東京都|京都府|大阪府|.{2,3}県)[^\\n]{0,55}(?:市|区|町|村)[^\\n]{0,45}", raw)
+            if _address:
+                _value = _address.group().strip()
+                if _value != st.session_state.get("pending_auto_address", ""):
+                    st.session_state["pending_auto_address"] = _value
+                    for _key in ("address_prefecture", "address_city", "address_district",
+                                 "_last_address_prefecture", "_last_address_city"):
+                        st.session_state.pop(_key, None)
+                updated.append("所在地")
+
         m = re.search(r"(中古マンション|新築マンション|中古戸建て|新築戸建て)", raw)
         if m:
             st.session_state["target_type"] = m.group(1)

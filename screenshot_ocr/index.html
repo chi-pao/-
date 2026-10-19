@@ -28,14 +28,14 @@ zone.ondrop=e=>{e.preventDefault();zone.style.background='';process(e.dataTransf
 document.addEventListener('paste',e=>{const fs=Array.from(e.clipboardData?.items||[]).filter(x=>x.type.startsWith('image/')).map(x=>x.getAsFile()).filter(Boolean);if(fs.length){e.preventDefault();process(fs)}});
 let busy=false;
 async function process(files){if(busy)return;const selected=Array.from(files||[]).filter(f=>f?.type.startsWith('image/'));if(!selected.length){status.textContent='画像を選んでください';return}
-busy=true;pick.disabled=true;preview.textContent=selected.length+'枚の画像を読み込み中';resize();
+busy=true;pick.disabled=true;preview.textContent='';resize();
 try{
 if(!window.Tesseract){status.textContent='文字認識を準備しています…';await new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
 const worker=await Tesseract.createWorker('jpn+eng');const results=[];
 try{for(let i=0;i<selected.length;i++){status.textContent='文字認識中 '+(i+1)+'/'+selected.length+'枚…';resize();results.push((await worker.recognize(selected[i])).data.text)}}finally{await worker.terminate()}
 const raw=results.join('\n\n').trim();
 if(!raw){status.textContent='文字が見つかりませんでした。文字の鮮明なスクショをお試しください';return}
-status.textContent='読み取り完了。入力欄に自動反映しています…';
+status.textContent='文字認識が完了しました。抽出できた項目を下の入力欄へ反映します。';
 send('streamlit:setComponentValue',{value:JSON.stringify({text:raw,nonce:Date.now()})});
 }catch(err){status.textContent='読み取りに失敗しました。通信環境を確認してください：'+String(err?.message||err)}
 finally{busy=false;pick.disabled=false;resize()}}

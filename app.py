@@ -143,6 +143,28 @@ st.markdown(
       .trust-chip { flex-basis:145px;font-size:.78rem;padding:10px 8px; }
       .site-topbar { align-items:flex-start; }
     }
+    /* スマートフォンは入力を主役にして、装飾と説明を最小限に */
+    @media (max-width:768px) {
+      .block-container {padding: .5rem .8rem 2rem !important;}
+      .site-topbar {margin:0 0 8px;gap:5px;}
+      .site-brand {font-size:.91rem;}
+      .site-topbar a {font-size:.76rem;}
+      .hero {flex-direction:row !important;align-items:center !important;gap:12px !important;padding:12px !important;border-radius:14px !important;box-shadow:none !important;}
+      .hero-logo-frame {width:72px !important;height:72px !important;min-width:72px !important;flex:0 0 72px !important;border-radius:12px !important;}
+      .hero-logo {width:100% !important;height:100% !important;min-width:0 !important;}
+      .hero-copy {flex:1;min-width:0;}
+      .hero-badge,.hero-subtitle,.hero-actions,.trust-strip,.steps {display:none !important;}
+      .hero-title {font-size:1.18rem !important;line-height:1.35 !important;margin:0 !important;letter-spacing:0 !important;}
+      .section-title {font-size:1.16rem !important;margin:1rem 0 .3rem !important;}
+      .section-description {font-size:.84rem !important;line-height:1.45 !important;margin:0 0 .6rem !important;}
+      h2 {font-size:1.3rem !important;}
+      h3 {font-size:1.12rem !important;}
+      [data-testid="stVerticalBlock"] {gap:.55rem;}
+      [data-testid="stExpander"] {border-radius:12px !important;}
+      [data-testid="stForm"],[data-testid="stVerticalBlockBorderWrapper"] {border-radius:13px !important;}
+      .stButton > button {min-height:48px !important;}
+      .stTextInput input,.stTextArea textarea,.stNumberInput input {font-size:16px !important;}
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -1891,19 +1913,9 @@ if "api_ready_architecture" not in st.session_state:
 
 # =========================================================
 st.markdown('<div id="service-guide"></div>', unsafe_allow_html=True)
-st.markdown("## 買いたい方・売りたい方、どちらも利用できます")
-st.info("🔎 買いたい方：売出価格と参考価格を比較。 🏡 売りたい方：売出価格を決める参考に。")
-st.markdown(
-    """
-    <div class="footer-feature">
-      <strong>参考価格を知る</strong> — 学習済みAIが物件条件から参考価格を計算します。<br>
-      <strong>売出価格と比較する</strong> — 入力した販売価格との差を可視化します。<br>
-      <strong>見落としを減らす</strong> — 築古・低価格・広い土地など、注意したい条件を案内します。<br>
-      <small>※表示価格は統計的な目安であり、正式な鑑定評価・買取保証ではありません。</small>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+with st.expander("このサービスについて（買う方・売る方）"):
+    st.write("買う方は売出価格と参考価格を比較。売る方は売出価格を決める参考にできます。")
+    st.caption("AIの参考価格は統計的な目安であり、正式な鑑定評価や買取保証ではありません。")
 
 # 入力方法：手入力を本体、URL自動入力を補助機能として扱う
 # =========================================================
@@ -1992,9 +2004,6 @@ if _ocr_value:
             st.success("自動反映：" + "・".join(updated) + "。下の入力欄を確認してください。")
         else:
             st.warning("項目を特定できませんでした。下の『認識した文字を確認』を開いてください。")
-if st.session_state.get("_ocr_last_text") is not None:
-    with st.expander("認識した文字を確認", expanded=True):
-        st.text_area("OCR結果", value=st.session_state["_ocr_last_text"], height=180, disabled=True)
 st.caption("※ 認識結果には誤りがあり得ます。画像の権利と掲載サイトの利用条件もご確認ください。")
 st.divider()
 

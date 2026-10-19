@@ -2029,6 +2029,10 @@ if _ocr_value:
                         st.session_state.pop(_key, None)
                 updated.append("所在地")
 
+        if "土地面積" in updated and "建物面積" in updated:
+            st.session_state["target_type"] = "中古戸建て"
+            updated.append("物件種別")
+
         m = re.search(r"(中古マンション|新築マンション|中古戸建て|新築戸建て)", raw)
         if m:
             st.session_state["target_type"] = m.group(1)

@@ -1993,7 +1993,7 @@ if _ocr_value:
                 st.session_state[_key] = _value
                 updated.append(_name)
 
-        m = re.search(r"(?:完成時期|完成年月|築年月|築年|建築年)[^0-9]{0,65}((?:19|20)\d{2})", raw, re.S)
+        m = re.search(r"(?:完成時期|完成年月|築年月|築年|建築年)[^0-9\n]{0,35}((?:19|20)\d{2})", raw)
         if not m:
             m = re.search(r"(?m)^\s*((?:19|20)\d{2})\s*年\s*\d{1,2}\s*月", raw)
         if not m:

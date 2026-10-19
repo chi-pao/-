@@ -2537,8 +2537,11 @@ with st.container(border=True):
             default_prefecture = prefecture_name
             break
 
-    if default_prefecture and "address_prefecture" not in st.session_state:
+    if default_prefecture and st.session_state.get("address_prefecture") != default_prefecture and st.session_state.get("_ocr_address_applied") != pending_address:
         st.session_state["address_prefecture"] = default_prefecture
+        st.session_state.pop("address_city", None)
+        st.session_state.pop("address_district", None)
+        st.session_state["_ocr_address_applied"] = pending_address
 
     selected_prefecture = st.selectbox(
         "都道府県",
@@ -2569,10 +2572,11 @@ with st.container(border=True):
 
     city_names = ["選択してください"] + [name for _, name in city_pairs]
 
-    if pending_address and "address_city" not in st.session_state:
+    if pending_address and st.session_state.get("_ocr_city_applied") != pending_address:
         for _, city_name in city_pairs:
             if city_name and city_name in pending_address:
                 st.session_state["address_city"] = city_name
+                st.session_state["_ocr_city_applied"] = pending_address
                 break
 
     selected_city_name = st.selectbox(
@@ -2605,10 +2609,11 @@ with st.container(border=True):
     district_names = [str(x.get("town_name") or "").strip() for x in town_records]
     district_names = sorted({x for x in district_names if x})
 
-    if pending_address and "address_district" not in st.session_state:
+    if pending_address and st.session_state.get("_ocr_district_applied") != pending_address:
         for district_name in district_names:
             if district_name and district_name in pending_address:
                 st.session_state["address_district"] = district_name
+                st.session_state["_ocr_district_applied"] = pending_address
                 break
 
     # 町名は五十音の行ボタンと前後のページ送りだけで選択する。

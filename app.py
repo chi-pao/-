@@ -1955,22 +1955,42 @@ $('copy').onclick=async()=>{try{await navigator.clipboard.writeText($('result').
 """, height=440, scrolling=True)
 ocr_text = st.text_area("読み取り結果をここに貼り付ける", key="ocr_text", height=90, placeholder="上の「読み取り結果をコピー」→ この欄に貼り付け")
 if st.button("読み取った項目を入力欄に反映", key="ocr_apply", use_container_width=True):
-    raw = st.session_state.get("ocr_text", "")
+    raw = st.session_state.get("ocr_text", "").replace("，", ",").replace("．", ".")
+    raw = re.sub(r"[ \\t]+", " ", raw)
+    updated = []
     def _ocr_number(pattern):
         m = re.search(pattern, raw, re.I)
         return float(m.group(1).replace(",", "")) if m else None
-    p = _ocr_number(r"(?:販売価格|物件価格|売出価格|価格)\s*[:：\s]*([0-9,]+(?:\.[0-9]+)?)\s*万円")
-    if p is not None: st.session_state["target_price"] = p
-    for label, key in [("土地面積|敷地面積","house_land_area_input"),("建物面積|延床面積","house_building_area_input"),("専有面積","condo_area_input")]:
-        val = _ocr_number(r"(?:" + label + r")\s*[:：\s]*([0-9,]+(?:\.[0-9]+)?)\s*(?:㎡|m2|m²)")
-        if val is not None: st.session_state[key] = val
-    m = re.search(r"(?:築年月|築年|建築年)\s*[:：\s]*((?:19|20)\d{2})", raw)
-    if m and int(m.group(1)) <= datetime.now().year: st.session_state["target_age"] = int(m.group(1))
-    m = re.search(r"(?:住所|所在地)\s*[:：\s]*([^\n\r]+)", raw)
-    if m: st.session_state["pending_auto_address"] = m.group(1).strip()
+
+    p = _ocr_number(r"(?:販売価格|物件価格|売出価格|価格)[^\\d\\n]{0,18}([0-9,]+(?:\\.[0-9]+)?)\\s*万円")
+    if p is not None and p > 0:
+        st.session_state["target_price"] = p
+        updated.append("価格")
+    for label, key, name in [
+        ("土地面積|敷地面積", "house_land_area_input", "土地面積"),
+        ("建物面積|延床面積", "house_building_area_input", "建物面積"),
+        ("専有面積", "condo_area_input", "専有面積"),
+    ]:
+        val = _ocr_number(r"(?:" + label + r")[^\\d\\n]{0,18}([0-9,]+(?:\\.[0-9]+)?)\\s*(?:㎡|m2|m²|平方メートル)")
+        if val is not None and val > 0:
+            st.session_state[key] = val
+            updated.append(name)
+    m = re.search(r"(?:築年月|築年|建築年)[^\\d\\n]{0,18}((?:19|20)\\d{2})", raw)
+    if m and 1900 <= int(m.group(1)) <= datetime.now().year:
+        st.session_state["target_age"] = int(m.group(1))
+        updated.append("築年")
+    m = re.search(r"(?:住所|所在地)[ \\t:：]*([^\\n\\r]+)", raw)
+    if m:
+        st.session_state["pending_auto_address"] = m.group(1).strip()
+        updated.append("所在地")
     m = re.search(r"(中古マンション|新築マンション|中古戸建て|新築戸建て)", raw)
-    if m: st.session_state["target_type"] = m.group(1)
-    st.success("読み取れた項目を反映しました。内容を確認してください。")
+    if m:
+        st.session_state["target_type"] = m.group(1)
+        updated.append("物件種別")
+    if updated:
+        st.success("反映した項目：" + "・".join(updated) + "。下の入力欄を確認してください。")
+    else:
+        st.warning("入力できる項目を認識できませんでした。読み取り結果に価格・面積・住所などが含まれているか確認してください。")
 st.caption("※ 認識結果には誤りがあり得ます。画像の権利と掲載サイトの利用条件もご確認ください。")
 st.divider()
 

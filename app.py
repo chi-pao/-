@@ -2061,6 +2061,13 @@ if _ocr_value:
             if len(_areas) == 1 and st.session_state.get("target_type") == "中古マンション":
                 st.session_state["condo_area_input"] = _areas[0]
                 updated.append("専有面積")
+        _layout_match = re.search(r"(?<![0-9])([1-9])\\s*(LDK|DK|K|R)\\s*(?:[+＋]\\s*S)?", raw, re.I)
+        if _layout_match:
+            _layout = _layout_match.group(1) + _layout_match.group(2).upper()
+            if _layout in ("1R", "1K", "1DK", "1LDK", "2K", "2DK", "2LDK",
+                           "3K", "3DK", "3LDK", "4K", "4DK", "4LDK"):
+                st.session_state["layout_choice"] = _layout
+                updated.append("間取り")
         if updated:
             st.success("自動反映：" + "・".join(updated) + "。下の入力欄を確認してください。")
         else:

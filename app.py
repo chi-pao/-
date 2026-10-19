@@ -1968,6 +1968,22 @@ if _ocr_value:
             st.session_state["target_price"] = p
             updated.append("価格")
 
+        # 表形式ではOCRが項目名と数値を別々に出すため、行ごとに照合する。
+        _ocr_lines = [line.strip() for line in raw.splitlines() if line.strip()]
+        _joined = " ".join(_ocr_lines)
+        _label_areas = [
+            ("土地面積", "house_land_area_input"),
+            ("建物面積", "house_building_area_input"),
+            ("専有面積", "condo_area_input"),
+        ]
+        for _label, _key in _label_areas:
+            _match = re.search(re.escape(_label) + r"[^0-9]{0,35}([0-9]{2,4}(?:[.,][0-9]{1,3})?)", _joined)
+            if _match:
+                _value = float(_match.group(1).replace(",", "."))
+                if 10 <= _value <= 10000:
+                    st.session_state[_key] = _value
+                    updated.append(_label)
+
         # 表形式のラベルと数値が別行になっても拾う。
         for label, key, name in [
             ("土地面積|敷地面積", "house_land_area_input", "土地面積"),

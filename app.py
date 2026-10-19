@@ -1923,39 +1923,16 @@ st.markdown(
 )
 
 
-st.markdown("### 📷 画像から物件情報を入力")
-st.info("**スクショを貼り付ける場所はこちらです。** 下の枠をクリックして Ctrl+V で貼り付けるか、「画像を選択」でスクショを指定してください。")
+st.markdown("### 📷 スクショを入れるだけで自動入力")
+st.caption("下の枠からスクショを選択するか貼り付けると、自動で文字を読み取って入力します。")
 import streamlit.components.v1 as components
-components.html("""
-<div style="font-family:sans-serif;padding:12px;border:2px dashed #0c857c;border-radius:14px;background:#f2faf8;color:#10283d">
-<div id="drop" tabindex="0" style="padding:22px 10px;text-align:center;background:white;border-radius:10px;cursor:pointer;font-weight:bold">📋 ここをクリックして Ctrl+V で貼り付け<br>または下のボタンから画像を選択</div>
-<input id="files" type="file" accept="image/*" multiple style="margin:12px 0;max-width:100%">
-<div id="preview" style="font-size:13px"></div>
-<button id="run" style="background:#0c857c;color:white;border:0;padding:13px;border-radius:10px;font-weight:bold;width:100%">画像の文字を読み取る</button>
-<p id="status" role="status" style="font-size:13px">画像は端末内で処理され、サーバーには送信されません。</p>
-<textarea id="result" rows="5" style="width:100%;box-sizing:border-box;font-size:16px" placeholder="ここに読み取り結果が表示されます"></textarea>
-<button id="copy" style="background:#0a263c;color:white;border:0;padding:12px;border-radius:10px;width:100%">読み取り結果をコピー</button>
-</div>
-<script>
-let selected=[];const $=id=>document.getElementById(id);
-function setFiles(fs){selected=Array.from(fs).filter(f=>f.type.startsWith('image/'));$('preview').textContent=selected.length+'枚の画像を選択しました';}
-$('files').onchange=e=>setFiles(e.target.files);
-$('drop').onclick=()=>$('drop').focus();
-$('drop').onpaste=e=>{const fs=Array.from(e.clipboardData.files||[]);if(fs.length){e.preventDefault();setFiles(fs);}};
-document.addEventListener('paste',e=>{const fs=Array.from(e.clipboardData.files||[]);if(fs.length){e.preventDefault();setFiles(fs);}});
-$('drop').ondragover=e=>e.preventDefault();
-$('drop').ondrop=e=>{e.preventDefault();setFiles(e.dataTransfer.files);};
-$('run').onclick=async()=>{if(!selected.length){$('status').textContent='まずスクショを貼り付けるか選択してください';return;}$('run').disabled=true;
-try{if(!window.Tesseract){$('status').textContent='日本語の文字認識を準備しています…';await new Promise((ok,no)=>{let s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';s.onload=ok;s.onerror=no;document.head.appendChild(s);});}
-const w=await Tesseract.createWorker('jpn+eng');let out=[];try{for(let i=0;i<selected.length;i++){$('status').textContent='読み取り中 '+(i+1)+'/'+selected.length;out.push((await w.recognize(selected[i])).data.text);}}finally{await w.terminate();}
-$('result').value=out.join('\\n\\n');$('status').textContent='読み取り完了。内容を確認してください。';
-}catch(e){$('status').textContent='読み取り失敗：'+String(e.message||e);}finally{$('run').disabled=false;}};
-$('copy').onclick=async()=>{try{await navigator.clipboard.writeText($('result').value);$('status').textContent='コピーしました。下の貼り付け欄に貼り付けてください。';}catch(e){$('result').focus();$('result').select();$('status').textContent='文字を選択しました。Ctrl+Cでコピーしてください。';}};
-</script>
-""", height=440, scrolling=True)
-ocr_text = st.text_area("読み取り結果をここに貼り付ける", key="ocr_text", height=90, placeholder="上の「読み取り結果をコピー」→ この欄に貼り付け")
-if st.button("読み取った項目を入力欄に反映", key="ocr_apply", use_container_width=True):
-    raw = st.session_state.get("ocr_text", "").replace("，", ",").replace("．", ".")
+_ocr_widget = components.declare_component("property_screenshot_ocr", path=str(Path(__file__).resolve().parent / "screenshot_ocr"))
+_ocr_value = _ocr_widget(key="screenshot_auto", default=None)
+if _ocr_value:
+    _payload = json.loads(_ocr_value)
+    if _payload.get("nonce") != st.session_state.get("_last_ocr_nonce"):
+        st.session_state["_last_ocr_nonce"] = _payload.get("nonce")
+    raw = str(_payload.get("text", "")).replace("，", ",").replace("．", ".")
     raw = re.sub(r"[ \\t]+", " ", raw)
     updated = []
     def _ocr_number(pattern):
@@ -1990,8 +1967,7 @@ if st.button("読み取った項目を入力欄に反映", key="ocr_apply", use_
     if updated:
         st.success("反映した項目：" + "・".join(updated) + "。下の入力欄を確認してください。")
     else:
-        st.warning("入力できる項目を認識できませんでした。読み取り結果に価格・面積・住所などが含まれているか確認してください。")
-st.caption("※ 認識結果には誤りがあり得ます。画像の権利と掲載サイトの利用条件もご確認ください。")
+        st.warning("入力できる項目を認識できませんでした。読み取り結果に価格・面積・住所などが含まれているか確認してください。")st.caption("※ 認識結果には誤りがあり得ます。画像の権利と掲載サイトの利用条件もご確認ください。")
 st.divider()
 
 property_url = st.text_area(

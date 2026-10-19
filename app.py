@@ -73,7 +73,7 @@ st.markdown(
       border-radius:50%;right:-105px;bottom:-165px;pointer-events:none; }
     .hero-logo { width:220px;height:220px;min-width:220px;object-fit:contain;border-radius:0;flex:0 0 auto;
   border:none;box-shadow:none;background:transparent; }
-    .hero-logo-frame { width:220px !important;height:220px !important;min-width:220px !important;flex:0 0 220px !important;display:flex;align-items:center;justify-content:center; }\n    .hero-logo-frame .hero-logo { width:100% !important;height:100% !important;min-width:0 !important;max-width:none !important;max-height:none !important; }\n    .hero-copy { position:relative;z-index:1;min-width:0; }
+    .hero-logo-frame { width:220px !important;height:220px !important;min-width:220px !important;flex:0 0 220px !important;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:18px; }\n    .hero-logo-frame .hero-logo { width:100% !important;height:100% !important;min-width:0 !important;max-width:none !important;max-height:none !important;object-fit:cover !important;transform:scale(2.6); }\n    .hero-copy { position:relative;z-index:1;min-width:0; }
     .hero-badge { display:inline-block;padding:.36rem .75rem;border:1px solid rgba(255,255,255,.35);
       border-radius:999px;background:rgba(255,255,255,.09);font-size:.82rem;letter-spacing:.03em;margin-bottom:.7rem; }
     .hero-title { color:white;font-size:clamp(1.5rem,2.5vw,2.1rem);line-height:1.23;
@@ -124,7 +124,7 @@ st.markdown(
       .block-container { padding-left:.85rem;padding-right:.85rem;padding-top:.75rem; }
       .hero { padding:1.4rem 1.2rem;gap:.9rem;border-radius:19px;align-items:flex-start; }
        .hero { flex-direction:column;align-items:stretch;padding:1rem; }
-      .hero-logo-frame { width:180px !important;height:180px !important;min-width:180px !important;flex:0 0 180px !important;align-self:center; }\n      .hero-logo-frame .hero-logo { width:100% !important;height:100% !important;min-width:0 !important;max-width:none !important; }
+      .hero-logo-frame { width:180px !important;height:180px !important;min-width:180px !important;flex:0 0 180px !important;align-self:center;overflow:hidden; }\n      .hero-logo-frame .hero-logo { width:100% !important;height:100% !important;min-width:0 !important;max-width:none !important; }
       .hero-title { font-size:1.55rem; }
       .hero-copy { width:100%; }
       .site-topbar { flex-wrap:wrap; }
@@ -167,7 +167,7 @@ st.markdown(
            <a href="#service-guide">サービスについて</a></div>
     </div>
     <section class="hero">
-    <div class="hero-logo-frame"><img class="hero-logo" src="data:image/png;base64,{APP_ICON_BASE64}" alt="お買い得物件チェッカーのロゴ" style="width:100% !important;height:100% !important;max-width:none !important;max-height:none !important;object-fit:contain !important;display:block !important;"></div>
+    <div class="hero-logo-frame"><img class="hero-logo" src="data:image/png;base64,{APP_ICON_BASE64}" alt="お買い得物件チェッカーのロゴ" style="width:100% !important;height:100% !important;max-width:none !important;max-height:none !important;object-fit:cover !important;transform:scale(2.6) !important;display:block !important;"></div>
       <div class="hero-copy">
         <div class="hero-badge">購入にも売却にも、価格のものさしを。</div>
         <h1 class="hero-title">買う前も、売る前も。<br>AIで価格をチェック。</h1>
@@ -1923,28 +1923,38 @@ st.markdown(
 )
 
 
-st.markdown("### 📸 スクショから物件情報を読み取る")
-st.caption("画像は端末内で文字認識します。当サイトのサーバーには画像を送信・保存しません。")
-st.html("""
-<div id="ocrbox" style="padding:14px;border:1px solid #dce7e9;border-radius:12px">
-<label>① 物件広告のスクショを選択（複数可） <input id="ocrfiles" type="file" accept="image/*" multiple style="display:block;max-width:100%;margin:8px 0"></label>
-<button id="ocrstart" type="button" style="padding:12px;background:#0c857c;color:white;border:0;border-radius:9px">② 文字を読み取る</button>
-<p id="ocrstatus" role="status">初回のみ文字認識プログラムを読み込みます。</p>
-<textarea id="ocrresult" rows="6" style="width:100%;box-sizing:border-box;font-size:16px" placeholder="読み取り結果"></textarea>
-<button id="ocrcopy" type="button" style="padding:10px;background:#0a263c;color:white;border:0;border-radius:9px">③ 結果をコピー</button>
+st.markdown("### 📷 画像から物件情報を入力")
+st.info("**スクショを貼り付ける場所はこちらです。** 下の枠をクリックして Ctrl+V で貼り付けるか、「画像を選択」でスクショを指定してください。")
+import streamlit.components.v1 as components
+components.html("""
+<div style="font-family:sans-serif;padding:12px;border:2px dashed #0c857c;border-radius:14px;background:#f2faf8;color:#10283d">
+<div id="drop" tabindex="0" style="padding:22px 10px;text-align:center;background:white;border-radius:10px;cursor:pointer;font-weight:bold">📋 ここをクリックして Ctrl+V で貼り付け<br>または下のボタンから画像を選択</div>
+<input id="files" type="file" accept="image/*" multiple style="margin:12px 0;max-width:100%">
+<div id="preview" style="font-size:13px"></div>
+<button id="run" style="background:#0c857c;color:white;border:0;padding:13px;border-radius:10px;font-weight:bold;width:100%">画像の文字を読み取る</button>
+<p id="status" role="status" style="font-size:13px">画像は端末内で処理され、サーバーには送信されません。</p>
+<textarea id="result" rows="5" style="width:100%;box-sizing:border-box;font-size:16px" placeholder="ここに読み取り結果が表示されます"></textarea>
+<button id="copy" style="background:#0a263c;color:white;border:0;padding:12px;border-radius:10px;width:100%">読み取り結果をコピー</button>
 </div>
 <script>
-(()=>{const f=document.getElementById('ocrfiles'),b=document.getElementById('ocrstart'),t=document.getElementById('ocrresult'),p=document.getElementById('ocrstatus');
-b.onclick=async()=>{if(!f.files.length){p.textContent='画像を選んでください';return;}b.disabled=true;
-try{if(!window.Tesseract){p.textContent='文字認識を準備中';await new Promise((ok,no)=>{let s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';s.onload=ok;s.onerror=no;document.head.appendChild(s);});}
-const w=await Tesseract.createWorker('jpn+eng');let out=[];try{for(let i=0;i<f.files.length;i++){p.textContent='読み取り中 '+(i+1)+'/'+f.files.length;out.push((await w.recognize(f.files[i])).data.text);}}finally{await w.terminate();}t.value=out.join('\n\n');p.textContent='完了。内容を確認してコピーしてください。';
-}catch(e){p.textContent='読み取りに失敗しました。手入力も利用できます。';}finally{b.disabled=false;}};
-document.getElementById('ocrcopy').onclick=async()=>{try{await navigator.clipboard.writeText(t.value);p.textContent='コピーしました。下の欄に貼り付けてください。';}catch(e){t.select();p.textContent='文字を選択しました。コピーしてください。';}};
-})();
+let selected=[];const $=id=>document.getElementById(id);
+function setFiles(fs){selected=Array.from(fs).filter(f=>f.type.startsWith('image/'));$('preview').textContent=selected.length+'枚の画像を選択しました';}
+$('files').onchange=e=>setFiles(e.target.files);
+$('drop').onclick=()=>$('drop').focus();
+$('drop').onpaste=e=>{const fs=Array.from(e.clipboardData.files||[]);if(fs.length){e.preventDefault();setFiles(fs);}};
+document.addEventListener('paste',e=>{const fs=Array.from(e.clipboardData.files||[]);if(fs.length){e.preventDefault();setFiles(fs);}});
+$('drop').ondragover=e=>e.preventDefault();
+$('drop').ondrop=e=>{e.preventDefault();setFiles(e.dataTransfer.files);};
+$('run').onclick=async()=>{if(!selected.length){$('status').textContent='まずスクショを貼り付けるか選択してください';return;}$('run').disabled=true;
+try{if(!window.Tesseract){$('status').textContent='日本語の文字認識を準備しています…';await new Promise((ok,no)=>{let s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';s.onload=ok;s.onerror=no;document.head.appendChild(s);});}
+const w=await Tesseract.createWorker('jpn+eng');let out=[];try{for(let i=0;i<selected.length;i++){$('status').textContent='読み取り中 '+(i+1)+'/'+selected.length;out.push((await w.recognize(selected[i])).data.text);}}finally{await w.terminate();}
+$('result').value=out.join('\\n\\n');$('status').textContent='読み取り完了。内容を確認してください。';
+}catch(e){$('status').textContent='読み取り失敗：'+String(e.message||e);}finally{$('run').disabled=false;}};
+$('copy').onclick=async()=>{try{await navigator.clipboard.writeText($('result').value);$('status').textContent='コピーしました。下の貼り付け欄に貼り付けてください。';}catch(e){$('result').focus();$('result').select();$('status').textContent='文字を選択しました。Ctrl+Cでコピーしてください。';}};
 </script>
-""", unsafe_allow_javascript=True)
-ocr_text = st.text_area("④ 読み取った文章をここに貼り付ける", key="ocr_text", height=100)
-if st.button("⑤ 読み取った項目を入力欄に反映", key="ocr_apply", use_container_width=True):
+""", height=440, scrolling=True)
+ocr_text = st.text_area("読み取り結果をここに貼り付ける", key="ocr_text", height=90, placeholder="上の「読み取り結果をコピー」→ この欄に貼り付け")
+if st.button("読み取った項目を入力欄に反映", key="ocr_apply", use_container_width=True):
     raw = st.session_state.get("ocr_text", "")
     def _ocr_number(pattern):
         m = re.search(pattern, raw, re.I)
@@ -1960,8 +1970,8 @@ if st.button("⑤ 読み取った項目を入力欄に反映", key="ocr_apply", 
     if m: st.session_state["pending_auto_address"] = m.group(1).strip()
     m = re.search(r"(中古マンション|新築マンション|中古戸建て|新築戸建て)", raw)
     if m: st.session_state["target_type"] = m.group(1)
-    st.success("読み取れた項目を反映しました。住所や数値を必ず確認してください。")
-st.caption("画像の権利・掲載元の規約に注意してください。文字認識には誤読があります。")
+    st.success("読み取れた項目を反映しました。内容を確認してください。")
+st.caption("※ 認識結果には誤りがあり得ます。画像の権利と掲載サイトの利用条件もご確認ください。")
 st.divider()
 
 property_url = st.text_area(

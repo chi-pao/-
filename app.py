@@ -2010,6 +2010,9 @@ if _ocr_value:
         m = re.search(r"(?:住所|所在地)[ \t:：]*([^\n\r]+)", raw)
         if m:
             address_text = m.group(1).strip()
+            _pref_start = re.search(r"(?:北海道|東京都|京都府|大阪府|[一-龥]{2,3}県)", address_text)
+            if _pref_start:
+                address_text = address_text[_pref_start.start():]
             # スクショの住所が2行に折り返されるケース。
             if address_text.endswith(("大字", "字")):
                 rest = raw[m.end():].lstrip("\n\r ")

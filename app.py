@@ -2859,7 +2859,7 @@ with st.container(border=True):
                 key="target_renovation",
             )
     else:
-        target_layout = "選択してください"
+        target_layout = st.selectbox("間取り", layout_options, key="layout_choice")
         target_renovation = "不明"
 
     target_total_floors = None

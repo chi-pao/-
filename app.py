@@ -1933,7 +1933,7 @@ if _ocr_value:
     if _payload.get("nonce") != st.session_state.get("_last_ocr_nonce"):
         st.session_state["_last_ocr_nonce"] = _payload.get("nonce")
         raw = str(_payload.get("text", "")).replace("，", ",").replace("．", ".")
-        raw = re.sub(r"[ \\t]+", " ", raw)
+        raw = re.sub(r"[ \t]+", " ", raw)
         st.session_state["_ocr_last_text"] = raw
         updated = []
         def _ocr_number(pattern):
@@ -1941,9 +1941,9 @@ if _ocr_value:
             return float(m.group(1).replace(",", "")) if m else None
 
         # SUUMOなどは「1598万円」のように価格だけを大きく表示する。
-        p = _ocr_number(r"(?:販売価格|物件価格|売出価格|価格)[^0-9]{0,45}([0-9,]+(?:\\.[0-9]+)?)\\s*万円")
+        p = _ocr_number(r"(?:販売価格|物件価格|売出価格|価格)[^0-9]{0,45}([0-9,]+(?:\.[0-9]+)?)\s*万円")
         if p is None:
-            p = _ocr_number(r"(?<![0-9])([0-9,]+(?:\\.[0-9]+)?)\\s*万円")
+            p = _ocr_number(r"(?<![0-9])([0-9,]+(?:\.[0-9]+)?)\s*万円")
         if p is not None and p > 0:
             st.session_state["target_price"] = p
             updated.append("価格")
@@ -1954,22 +1954,22 @@ if _ocr_value:
             ("建物面積|延床面積", "house_building_area_input", "建物面積"),
             ("専有面積", "condo_area_input", "専有面積"),
         ]:
-            val = _ocr_number(r"(?:" + label + r")[^0-9]{0,70}([0-9,]+(?:\\.[0-9]+)?)\\s*(?:㎡|m2|m²|平方メートル)")
+            val = _ocr_number(r"(?:" + label + r")[^0-9]{0,70}([0-9,]+(?:\.[0-9]+)?)\s*(?:㎡|m2|m²|平方メートル)")
             if val is not None and val > 0:
                 st.session_state[key] = val
                 updated.append(name)
 
-        m = re.search(r"(?:完成時期|完成年月|築年月|築年|建築年)[^0-9]{0,65}((?:19|20)\\d{2})", raw, re.S)
+        m = re.search(r"(?:完成時期|完成年月|築年月|築年|建築年)[^0-9]{0,65}((?:19|20)\d{2})", raw, re.S)
         if m and 1900 <= int(m.group(1)) <= datetime.now().year:
             st.session_state["target_age"] = int(m.group(1))
             updated.append("築年")
 
-        m = re.search(r"(?:住所|所在地)[ \\t:：]*([^\\n\\r]+)", raw)
+        m = re.search(r"(?:住所|所在地)[ \t:：]*([^\n\r]+)", raw)
         if m:
             address_text = m.group(1).strip()
             # スクショの住所が2行に折り返されるケース。
             if address_text.endswith(("大字", "字")):
-                rest = raw[m.end():].lstrip("\\n\\r ")
+                rest = raw[m.end():].lstrip("\n\r ")
                 address_text += rest.splitlines()[0].strip() if rest else ""
             if address_text:
                 old_address = st.session_state.get("pending_auto_address", "")

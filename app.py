@@ -1944,7 +1944,7 @@ if _ocr_value:
     _payload = json.loads(_ocr_value)
     if _payload.get("nonce") != st.session_state.get("_last_ocr_nonce"):
         st.session_state["_last_ocr_nonce"] = _payload.get("nonce")
-        raw = str(_payload.get("text", "")).replace("，", ",").replace("．", ".")
+        raw = unicodedata.normalize("NFKC", str(_payload.get("text", "")))
         raw = re.sub(r"[ \t]+", " ", raw)
         st.session_state["_ocr_last_text"] = raw
         updated = []
@@ -2003,7 +2003,7 @@ if _ocr_value:
         if updated:
             st.success("自動反映：" + "・".join(updated) + "。下の入力欄を確認してください。")
         else:
-            st.warning("項目を特定できませんでした。下の『認識した文字を確認』を開いてください。")
+            st.warning("画像から物件情報を読み取れませんでした。")
 st.caption("※ 認識結果には誤りがあり得ます。画像の権利と掲載サイトの利用条件もご確認ください。")
 st.divider()
 

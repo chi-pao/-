@@ -1,6 +1,6 @@
 export function transform(row,c) {
   const v=c.numeric.map((n,i)=>row[n]!=null&&Number.isFinite(Number(row[n]))?Number(row[n]):c.numericDefaults[i]);
-  c.categorical.forEach((n,i)=>{let value=row[n]==null||row[n]===''?c.categoricalDefaults[i]:row[n];let index=c.categories[i].indexOf(value);v.push(index)});
+  c.categorical.forEach((n,i)=>{let value=row[n]==null||row[n]===''?c.categoricalDefaults[i]:row[n];if(c.algorithm==='lightgbm'){value=String(value);if(n==='MunicipalityCode'&&/^\d+$/.test(value))value=value.padStart(5,'0');}let index=c.categories[i].indexOf(value);v.push(index)});
   return c.algorithm==='forest'?v.map(Math.fround):v;
 }
 export function componentPrediction(row,c,buffer) {

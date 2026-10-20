@@ -49,7 +49,17 @@ def export_pipeline(pipe,path,public_path):
             'numeric':nums,'numericDefaults':defaults,'categorical':cats,'categoricalDefaults':cat_defaults,'categories':categories}
 
 def prediction(bundle,frame):
-    out=np.asarray(bundle['pipeline'].predict(frame[bundle['feature_columns']]),dtype=float)
+    x=frame[bundle['feature_columns']].copy()
+    for column in bundle.get('categorical_features',[]):
+        if column not in x:continue
+        def category(value):
+            if pd.isna(value):return np.nan
+            if column=='MunicipalityCode':
+                try:return str(int(float(value))).zfill(5)
+                except (ValueError,TypeError):pass
+            return str(value)
+        x[column]=x[column].map(category)
+    out=np.asarray(bundle['pipeline'].predict(x),dtype=float)
     if out.shape!=(len(frame),) or not np.all(np.isfinite(out)) or np.any(out<=0):raise ValueError('Invalid model predictions')
     return out
 

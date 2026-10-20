@@ -1,6 +1,12 @@
 name: Real-estate AI research and safe promotion
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - 'export_sites_model.py'
+      - 'verify_sites_export.mjs'
+      - 'sites_model_runtime.mjs'
+      - '.github/workflows/ai_learning.yml'
   schedule:
     - cron: '17 2,14 * * *'
 permissions:

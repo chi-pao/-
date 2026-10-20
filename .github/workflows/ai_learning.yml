@@ -20,7 +20,7 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Check promotion and research Python syntax
-        run: python -m py_compile promote_used_house.py research_adaptive.py app.py
+        run: python -m py_compile promote_used_house.py research_adaptive.py export_sites_model.py app.py
       - name: Test model promotion safeguards
         run: python -m unittest discover -s tests -p test_promotion.py -v
       - name: Restore training archive and V7 baseline from GitHub Release
@@ -147,5 +147,32 @@ jobs:
           git add -f models/candidates/approved_used_house.joblib models/candidates/approved_used_house.json
           if ! git diff --cached --quiet; then
             git commit -m "Promote independently verified used-house model"
+            git push
+          fi
+
+      - name: Export independently approved model for the Sites checker
+        id: sites_bridge
+        if: steps.promotion.outcome == 'success'
+        shell: bash
+        env:
+          INDEPENDENT_HOLDOUT_SHA256: ${{ secrets.INDEPENDENT_HOLDOUT_SHA256 }}
+        run: |
+          curl --fail --location --retry 3 --max-time 300 \
+            "https://github.com/chi-pao/-/releases/download/models-v1/used_house_model.joblib" \
+            -o models/sites_baseline_used_house.joblib
+          python export_sites_model.py \
+            --approved models/candidates/approved_used_house.joblib \
+            --approval models/candidates/approved_used_house.json \
+            --baseline models/sites_baseline_used_house.joblib \
+            --holdout data/unused_holdout.csv --output site-models
+      - name: Publish portable model and retain the previous approved version
+        if: steps.sites_bridge.outputs.exported == 'true'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f site-models
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish independently verified model for Sites"
             git push
           fi

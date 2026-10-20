@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "status": "waiting_for_approved_model",
+  "model_key": "used_house",
+  "baseline_sha256": "a446effe7ec69ad07e635739ca2a2ccfd2f20a6d19a487a632b289994834ec51",
+  "reference": {
+    "year": 2026,
+    "quarter": 4,
+    "label": "2026年10月"
+  }
+}

@@ -17,6 +17,24 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OrdinalEncoder
 from lightgbm import LGBMRegressor
 
+# Match the fields and property scope actually available in the Sites checker.
+DATA_POLICY = 'site-residential-used-house-v2'
+SITE_UNAVAILABLE = {'StationMinutes', 'PriceCategory'}
+
+def normalize_city_codes(values):
+    text = values.fillna('').astype(str).str.normalize('NFKC').str.strip()
+    codes = pd.to_numeric(text, errors='coerce')
+    valid = codes.notna() & codes.ge(1000) & codes.le(99999) & codes.eq(codes.round())
+    return codes.where(valid).map(lambda code: f'{int(code):05d}' if pd.notna(code) else '不明')
+
+def prepare_site_training(raw):
+    frame = prepare(raw)
+    # Shared houses, shops, mixed-use and unknown-use records are not detached
+    # residential examples. Age zero and unknown age cannot establish used status.
+    frame = frame.loc[frame.Use.eq('住宅') & frame.BuildingAge.ge(1)].copy()
+    frame['MunicipalityCode'] = normalize_city_codes(frame['MunicipalityCode'])
+    return frame.reset_index(drop=True)
+
 # Hypotheses are chosen in advance; no unbounded search on the validation set.
 TESTS = [
     ('baseline', [], 127, 450, 60, 8.0, 0.045),
@@ -42,12 +60,13 @@ def metric(frame, p):
 
 def input_frame(frame, excluded):
     x = frame.copy()
-    for c in excluded:
+    for c in set(excluded) | SITE_UNAVAILABLE:
         x[c] = '不明' if c in CATS else np.nan
     return x
 
 def model_factory(spec):
     _, excluded, leaves, iters, min_child, regularization, lr = spec
+    excluded = set(excluded) | SITE_UNAVAILABLE
     cats = [x for x in CATS if x not in excluded]
     nums = [x for x in NUMS if x not in excluded]
     pre = ColumnTransformer([
@@ -71,13 +90,15 @@ def pred(model, frame, excluded):
 class V8Pipeline:
     """Site-compatible predictor returning yen. Loaded via importable research_v8 module."""
     def __init__(self, model, excluded, regional=None, regional_weight=0.0):
-        self.model=model; self.excluded=excluded
+        self.model=model; self.excluded=excluded; self.city_codes_padded=True
         self.regional=regional or {}; self.regional_weight=regional_weight
     def predict(self, frame):
         x=frame.copy()
         for c in FEATURES:
             if c not in x: x[c] = '不明' if c in CATS else np.nan
         for c in CATS: x[c]=x[c].fillna('不明').astype(str)
+        if getattr(self,'city_codes_padded',False):
+            x['MunicipalityCode'] = normalize_city_codes(x['MunicipalityCode'])
         for c in NUMS: x[c]=pd.to_numeric(x[c],errors='coerce')
         p=pred(self.model,x,self.excluded)
         for region,m in self.regional.items():
@@ -158,7 +179,7 @@ def propose(champion, diagnostics, experiments, round_no, seed=42):
         ch = int(max(15, min(300, ch)))
         rg = round(float(max(.01, min(150, rg))), 5)
         rate = round(float(max(.008, min(.15, rate))), 5)
-        spec = (f'round{round_no}_{len(ideas)+1}', sorted(set(ex)), lv, tr, ch, rg, rate)
+        spec = (f'round{round_no}_{len(ideas)+1}', sorted(set(ex) | SITE_UNAVAILABLE), lv, tr, ch, rg, rate)
         key = json.dumps(spec[1:], sort_keys=True)
         if key not in seen and all(json.dumps(x[1][1:],sort_keys=True)!=key for x in ideas):
             ideas.append((reason, spec))
@@ -198,22 +219,22 @@ def run(args):
     report_path=out/'adaptive_research_report.json'
     # Stable across runner restarts and archive re-downloads; reset only if bytes change.
     fingerprints=[]
-    for p in (h,e):
+    for p in (h,):
         if p and p.is_file():
             digest=hashlib.sha256()
             with p.open('rb') as stream:
                 for chunk in iter(lambda: stream.read(1024*1024), b''):
                     digest.update(chunk)
             fingerprints.append(digest.hexdigest())
-    signature=hashlib.sha256('|'.join(fingerprints).encode()).hexdigest()
-    data=prepare(load_history(h,300 if args.quick else None))
+    signature=hashlib.sha256((DATA_POLICY+'|'+'|'.join(fingerprints)).encode()).hexdigest()
+    data=prepare_site_training(load_history(h,300 if args.quick else None))
     train=data.loc[data.TransactionYear<=2023].reset_index(drop=True)
     val=data.loc[data.TransactionYear==2024].reset_index(drop=True)
     diagnostic=data.loc[data.TransactionYear==2025].reset_index(drop=True)
     if len(train)<100 or len(val)<100: raise RuntimeError('Insufficient train/validation data')
     # The 2024 set is repeatedly optimized against, NOT an independent test.
     # No automatic production promotion. Existing V7/V8 and 3 production models remain intact.
-    champion=('baseline',[],127,450,60,8.0,.045)
+    champion=('baseline',sorted(SITE_UNAVAILABLE),127,450,60,8.0,.045)
     # Seed the search from the V8 winner when its report is available.
     v8report=out/'v8_research_report.json'
     if v8report.is_file() and not args.restart:
@@ -234,7 +255,8 @@ def run(args):
                 if c and len(c)==7: champion=tuple(c)
             else: print('Data changed; beginning a fresh search',flush=True)
         except (ValueError,OSError): pass
-    report={'version':'adaptive-1','status':'running','data_signature':signature,'started_at':datetime.now().isoformat(),
+    champion=(champion[0],sorted(set(champion[1]) | SITE_UNAVAILABLE),*champion[2:])
+    report={'version':'adaptive-2','scope':DATA_POLICY,'site_unavailable_features':sorted(SITE_UNAVAILABLE),'status':'running','data_signature':signature,'started_at':datetime.now().isoformat(),
         'train_n':len(train),'validation_2024_n':len(val),'diagnostic_2025_n':len(diagnostic),
         'warning':'2024 is reused for model selection; 2025/2026 have been inspected in earlier research. Neither is a pristine holdout. No automatic production deployment.',
         'experiments':completed,'champion_spec':list(champion)}
@@ -278,6 +300,7 @@ def run(args):
         final=fit(full,champion)
         bundle={'pipeline':V8Pipeline(final,champion[1]),'feature_columns':FEATURES,
                 'model_key':'used_house','target_unit':'yen','training_end_year':2025,'candidate_only':True,
+                'categorical_features':CATS,'data_policy':DATA_POLICY,
                 'display_name':'Feedback-driven adaptive research candidate (not approved)', 'validation_report':report}
         target=out/'adaptive_used_house_candidate.joblib';tmp=out/'adaptive_used_house_candidate.tmp.joblib'
         try:

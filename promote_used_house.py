@@ -28,7 +28,11 @@ def predict(bundle, data):
     missing = set(cols).difference(data.columns)
     if missing:
         raise ValueError("Missing evaluation features: " + ", ".join(sorted(missing)))
-    prediction = np.asarray(pipe.predict(data[list(cols)]), dtype=float)
+    # Evaluate both contenders with the same fields the Site can supply.
+    frame = data[list(cols)].copy()
+    if 'StationMinutes' in frame: frame['StationMinutes'] = np.nan
+    if 'PriceCategory' in frame: frame['PriceCategory'] = np.nan
+    prediction = np.asarray(pipe.predict(frame), dtype=float)
     if prediction.shape != (len(data),) or not np.all(np.isfinite(prediction)) or np.any(prediction <= 0):
         raise ValueError("Invalid prediction")
     return prediction
@@ -79,7 +83,8 @@ def main():
     before = score(y, predict(incumbent, data))
     after = score(y, predict(challenger, data))
     report = {"incumbent": before, "challenger": after, "holdout_year": args.holdout_year,
-              "holdout_rows": len(data), "holdout_sha256": holdout_sha256, "status": "rejected"}
+              "holdout_rows": len(data), "holdout_sha256": holdout_sha256,
+              "input_policy": "site-residential-used-house-v2", "status": "rejected"}
     # Require material accuracy improvement and no significant regression.
     approved = (after["median_ape_pct"] <= before["median_ape_pct"] - 0.5
                 and after["mae_yen"] <= before["mae_yen"] * 1.01

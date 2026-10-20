@@ -3,6 +3,9 @@ on:
   workflow_dispatch:
   push:
     paths:
+      - 'research_adaptive.py'
+      - 'promote_used_house.py'
+      - 'tests/test_promotion.py'
       - 'export_sites_model.py'
       - 'verify_sites_export.mjs'
       - 'sites_model_runtime.mjs'

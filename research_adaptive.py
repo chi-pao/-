@@ -1,4 +1,4 @@
-"""V9: sequential feature/hyperparameter research, no six-hour idle loop.
+"""Adaptive price research with categorical, robust-loss and recency experiments.
 Keeps production models and V7 candidate untouched. 2024 is development validation;
 2025/2026 were previously inspected, so neither is an untouched test set.
 """
@@ -56,6 +56,8 @@ def metric(frame, p):
     e = np.abs(y-p)
     return {'n':int(len(y)), 'mae_man_yen':round(float(np.mean(e)),2),
             'median_ape_pct':round(float(np.median(e/np.maximum(y,1))*100),2),
+            'within20_pct':round(float(np.mean(e/np.maximum(y,1)<=.2)*100),2),
+            'p90_ape_pct':round(float(np.percentile(e/np.maximum(y,1),90)*100),2),
             'bias_pct':round(float(np.median((p-y)/np.maximum(y,1))*100),2)}
 
 def input_frame(frame, excluded):
@@ -64,8 +66,22 @@ def input_frame(frame, excluded):
         x[c] = '不明' if c in CATS else np.nan
     return x
 
+def model_options(spec):
+    """Old seven-field experiments keep exactly their original semantics."""
+    return dict(spec[7]) if len(spec) == 8 else {}
+
+def training_weights(frame, half_life=0):
+    """Recency is based only on training timestamps, never validation prices."""
+    if not half_life:
+        return np.ones(len(frame))
+    dates = pd.to_numeric(frame.TransactionYear, errors='coerce') + (pd.to_numeric(frame.Quarter, errors='coerce') - 1) / 4
+    if not dates.notna().all():
+        raise ValueError('Recency weights require valid training dates')
+    return np.exp2((dates.to_numpy() - dates.max()) / half_life)
+
 def model_factory(spec):
-    _, excluded, leaves, iters, min_child, regularization, lr = spec
+    _, excluded, leaves, iters, min_child, regularization, lr = spec[:7]
+    options = model_options(spec)
     excluded = set(excluded) | SITE_UNAVAILABLE
     cats = [x for x in CATS if x not in excluded]
     nums = [x for x in NUMS if x not in excluded]
@@ -76,11 +92,19 @@ def model_factory(spec):
     ])
     return Pipeline([('pre',pre),('lgb',LGBMRegressor(n_estimators=iters,num_leaves=leaves,
         min_child_samples=min_child,reg_lambda=regularization,learning_rate=lr,
+        objective=options.get('objective','regression'),
+        cat_smooth=options.get('cat_smooth',10.0),
         verbosity=-1,n_jobs=4,random_state=42))])
 
 def fit(frame, spec):
     m = model_factory(spec)
-    m.fit(input_frame(frame,spec[1])[FEATURES], np.log(frame.price_man.to_numpy(dtype=float)))
+    options = model_options(spec)
+    fit_args = {'lgb__sample_weight': training_weights(frame, options.get('half_life',0))}
+    if options.get('native_categories'):
+        transformers = m.named_steps['pre'].transformers
+        n_numeric = len(transformers[0][2])
+        fit_args['lgb__categorical_feature'] = list(range(n_numeric, n_numeric + len(transformers[1][2])))
+    m.fit(input_frame(frame,spec[1])[FEATURES], np.log(frame.price_man.to_numpy(dtype=float)), **fit_args)
     return m
 
 def pred(model, frame, excluded):
@@ -160,7 +184,8 @@ def propose(champion, diagnostics, experiments, round_no, seed=42):
     Mutations use previous successes/failures and the worst error segments.
     """
     rng = random.Random(seed + round_no)
-    _, excluded, leaves, trees, child, reg, lr = champion
+    _, excluded, leaves, trees, child, reg, lr = champion[:7]
+    options = model_options(champion)
     seen = {json.dumps(e.get('spec', [])[1:], sort_keys=True) for e in experiments if e.get('spec')}
     ideas = []
     priority = []
@@ -173,16 +198,31 @@ def propose(champion, diagnostics, experiments, round_no, seed=42):
     if wins:
         successful = wins[-1].get('hypothesis', '')
         if 'regularization' in successful: priority.insert(0, 'planning')
-    def add(reason, ex, lv, tr, ch, rg, rate):
+    def add(reason, ex, lv, tr, ch, rg, rate, settings=None):
         lv = int(max(15, min(511, lv)))
         tr = int(max(120, min(1400, tr)))
         ch = int(max(15, min(300, ch)))
         rg = round(float(max(.01, min(150, rg))), 5)
         rate = round(float(max(.008, min(.15, rate))), 5)
         spec = (f'round{round_no}_{len(ideas)+1}', sorted(set(ex) | SITE_UNAVAILABLE), lv, tr, ch, rg, rate)
+        settings = options if settings is None else settings
+        if settings: spec = (*spec, dict(settings))
         key = json.dumps(spec[1:], sort_keys=True)
         if key not in seen and all(json.dumps(x[1][1:],sort_keys=True)!=key for x in ideas):
             ideas.append((reason, spec))
+    # Test methods as well as tree counts. All choices are made on development
+    # data only; production promotion still requires the independent gate.
+    method_tests = [
+        ('native category splits', {'native_categories': True}),
+        ('robust absolute log-price loss', {'objective': 'regression_l1'}),
+        ('recent training transactions, two-year half-life', {'half_life': 2.0}),
+        ('native categories with robust loss and recency',
+         {'native_categories': True, 'objective': 'regression_l1', 'half_life': 2.0}),
+    ]
+    for reason, changes in method_tests:
+        settings = {**options, **changes}
+        if settings != options:
+            add(reason, excluded, leaves, trees, child, reg, lr, settings)
     for group in priority[:3]:
         columns = FEATURE_GROUPS[group]
         if all(x in excluded for x in columns):
@@ -209,6 +249,12 @@ def propose(champion, diagnostics, experiments, round_no, seed=42):
 
 def score(v):
     return (v['median_ape_pct'],v['mae_man_yen'])
+
+def better_research(candidate, incumbent):
+    # Do not improve the middle case by making expensive errors much worse.
+    return (candidate['median_ape_pct'] < incumbent['median_ape_pct']
+            and candidate['mae_man_yen'] <= incumbent['mae_man_yen'] * 1.01
+            and candidate['within20_pct'] >= incumbent['within20_pct'] - 1)
 
 def run(args):
     site=args.site.resolve(); root=Path(__file__).resolve().parent
@@ -252,11 +298,11 @@ def run(args):
             if old.get('data_signature')==signature:
                 completed=old.get('experiments',[])
                 c=old.get('champion_spec')
-                if c and len(c)==7: champion=tuple(c)
+                if c and len(c) in (7,8): champion=tuple(c)
             else: print('Data changed; beginning a fresh search',flush=True)
         except (ValueError,OSError): pass
     champion=(champion[0],sorted(set(champion[1]) | SITE_UNAVAILABLE),*champion[2:])
-    report={'version':'adaptive-2','scope':DATA_POLICY,'site_unavailable_features':sorted(SITE_UNAVAILABLE),'status':'running','data_signature':signature,'started_at':datetime.now().isoformat(),
+    report={'version':'adaptive-3','scope':DATA_POLICY,'site_unavailable_features':sorted(SITE_UNAVAILABLE),'status':'running','data_signature':signature,'started_at':datetime.now().isoformat(),
         'train_n':len(train),'validation_2024_n':len(val),'diagnostic_2025_n':len(diagnostic),
         'warning':'2024 is reused for model selection; 2025/2026 have been inspected in earlier research. Neither is a pristine holdout. No automatic production deployment.',
         'experiments':completed,'champion_spec':list(champion)}
@@ -264,6 +310,8 @@ def run(args):
     champion_model=fit(train,champion)
     current_predictions=pred(champion_model,val,champion[1])
     best=metric(val,current_predictions)
+    report['starting_2024']=dict(best)
+    report['starting_spec']=list(champion)
     print(f'Adaptive research: train={len(train):,} validation={len(val):,}; baseline median APE={best["median_ape_pct"]}%',flush=True)
     round_no=1+max([int(x.get('round',0)) for x in completed] or [0])
     rounds=1 if args.quick else args.rounds
@@ -279,7 +327,7 @@ def run(args):
                 candidate_predictions=pred(model,val,spec[1])
                 m=metric(val,candidate_predictions)
                 entry['validation_2024']=m;entry['status']='ok'
-                if score(m)<score(best):
+                if better_research(m,best):
                     champion=spec;champion_model=model;best=m;current_predictions=candidate_predictions;improvement=True
                     entry['new_champion']=True
             except Exception as ex:

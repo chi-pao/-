@@ -32,12 +32,22 @@ def export_pipeline(pipe,path,public_path):
     categories=[[str(v) for v in c] for c in cat.steps[-1][1].categories_]
     dump=model.booster_.dump_model()
     if dump.get('num_tree_per_iteration',1)!=1:raise ValueError('Only scalar regression is supported')
-    data=bytearray();roots=[]
+    data=bytearray();roots=[];category_sets=[];category_lookup={}
     def emit(n):
         index=len(data)//16
         if 'leaf_value' in n:data.extend(struct.pack('<dihh',float(n['leaf_value']),-1,-1,0));return index
-        if n['decision_type']!='<=' or n.get('missing_type')=='Zero':raise ValueError('Unsupported LightGBM split')
-        data.extend(struct.pack('<dihh',float(n['threshold']),-1,int(n['split_feature']),0))
+        if n.get('missing_type')=='Zero':raise ValueError('Unsupported LightGBM zero-missing split')
+        flags=0
+        if n['decision_type']=='==':
+            members=tuple(int(v) for v in str(n['threshold']).split('||'))
+            if any(v<0 for v in members):raise ValueError('Invalid categorical split')
+            if members not in category_lookup:
+                category_lookup[members]=len(category_sets);category_sets.append(list(members))
+            threshold=category_lookup[members]
+            flags=1 | (2 if n.get('default_left') else 0)
+        elif n['decision_type']=='<=':threshold=float(n['threshold'])
+        else:raise ValueError('Unsupported LightGBM split')
+        data.extend(struct.pack('<dihh',threshold,-1,int(n['split_feature']),flags))
         assert emit(n['left_child'])==index+1
         right=emit(n['right_child']);struct.pack_into('<i',data,index*16+8,right);return index
     for tree in dump['tree_info']:roots.append(emit(tree['tree_structure']))
@@ -46,7 +56,8 @@ def export_pipeline(pipe,path,public_path):
     path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(packed)
     return {'path':public_path,'sha256':hashlib.sha256(packed).hexdigest(),'bytes':len(packed),'nodes':len(data)//16,
             'algorithm':'lightgbm','postprocess':'v8_log_man','baseline':0,'log':False,'roots':roots,'weight':1,
-            'numeric':nums,'numericDefaults':defaults,'categorical':cats,'categoricalDefaults':cat_defaults,'categories':categories}
+            'numeric':nums,'numericDefaults':defaults,'categorical':cats,'categoricalDefaults':cat_defaults,'categories':categories,
+            'categoricalSplits':category_sets}
 
 def prediction(bundle,frame):
     x=frame[bundle['feature_columns']].copy()
@@ -96,7 +107,10 @@ def publish(args):
     with tempfile.TemporaryDirectory() as temp:
         file=Path(temp)/'private-parity.json';file.write_text(json.dumps({'model':model,'root':str(out.parent.resolve()),'fixtures':fixtures},ensure_ascii=False,allow_nan=False))
         subprocess.run(['node',str(args.verifier.resolve()),str(file)],check=True)
-    manifest={'schema':1,'status':'approved','model_key':'used_house','model_sha256':digest,'baseline_sha256':BASELINE_SHA,
+    # Older Site runtimes must reject category-aware binaries, not silently
+    # interpret their set indexes as numeric split thresholds.
+    schema=2 if any(c['categoricalSplits'] for c in components) else 1
+    manifest={'schema':schema,'status':'approved','model_key':'used_house','model_sha256':digest,'baseline_sha256':BASELINE_SHA,
               'reference':REFERENCE,'training_end_year':training_end,'baseline_training_end_year':baseline_end,
               'approved_at':datetime.now(timezone.utc).isoformat(),'model':model,
               'evaluation':{'baseline':before,'incumbent':prior,'challenger':after,'holdout_sha256':holdout_sha,'holdout_rows':len(data),'holdout_year':int(years.min())}}

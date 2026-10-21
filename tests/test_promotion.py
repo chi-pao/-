@@ -150,5 +150,71 @@ class SiteInputPolicyTests(unittest.TestCase):
         self.assertEqual(data.StationMinutes.tolist(), [3])
 
 
+class PrecisionResearchTests(unittest.TestCase):
+    def test_recency_weights_use_training_dates_only(self):
+        from research_adaptive import training_weights
+        frame = pd.DataFrame({'TransactionYear':[2021,2023,2023], 'Quarter':[1,1,1],
+                              'price_man':[500,3000,9999]})
+        np.testing.assert_allclose(training_weights(frame,2), [.5,1,1])
+        np.testing.assert_allclose(training_weights(frame,0), [1,1,1])
+        frame['price_man'] *= 100
+        np.testing.assert_allclose(training_weights(frame,2), [.5,1,1])
+
+    def test_method_search_preserves_settings_and_budget(self):
+        from research_adaptive import propose, model_options, SITE_UNAVAILABLE
+        old = ('old', [], 31,120,15,8,.05)
+        self.assertEqual(model_options(old),{})
+        ideas = propose(old,[],[],1)
+        self.assertLessEqual(len(ideas),8)
+        self.assertTrue(any(model_options(s).get('native_categories') for _,s in ideas))
+        self.assertTrue(any(model_options(s).get('objective')=='regression_l1' for _,s in ideas))
+        self.assertTrue(any(model_options(s).get('half_life')==2 for _,s in ideas))
+        champion = (*old, {'native_categories':True,'objective':'regression_l1','half_life':2})
+        for _,spec in propose(champion,[],[],2):
+            self.assertEqual(model_options(spec),model_options(champion))
+            self.assertTrue(SITE_UNAVAILABLE.issubset(spec[1]))
+
+    def test_middle_error_improvement_cannot_hide_average_or_coverage_regression(self):
+        from research_adaptive import better_research
+        before={'median_ape_pct':30,'mae_man_yen':700,'within20_pct':40}
+        self.assertFalse(better_research(dict(before,median_ape_pct=29,mae_man_yen=800),before))
+        self.assertFalse(better_research(dict(before,median_ape_pct=29,within20_pct=38),before))
+        self.assertTrue(better_research(dict(before,median_ape_pct=29),before))
+
+    def test_real_lightgbm_category_and_numeric_exports_match_javascript(self):
+        from research_adaptive import fit, V8Pipeline, FEATURES, CATS, NUMS
+        from export_sites_model import export_pipeline
+        # Artificial prices exercise the implementation, not model accuracy.
+        rng=np.random.default_rng(14)
+        town=rng.integers(0,12,960)
+        frame=pd.DataFrame({c:np.full(960,100.) for c in NUMS})
+        for c in CATS:frame[c]='住宅' if c=='Use' else '不明'
+        frame['MunicipalityCode']='01101'
+        frame['DistrictName']=['町'+str(i) for i in town]
+        frame['TransactionYear']=2023
+        frame['Quarter']=1
+        effects=np.array([.1,1.4,.3,1.8,.6,1.1,.2,1.6,.7,1.9,.4,1.2])
+        frame['price_man']=np.exp(7+effects[town]+rng.normal(0,.01,960))
+        cases=frame.iloc[:24].copy()
+        cases.loc[cases.index[0],'DistrictName']='未学習の町'
+        cases.loc[cases.index[1],'DistrictName']=None
+        cases.loc[cases.index[2],'Area']=np.nan
+        spec=('test',[],31,120,15,.01,.05)
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            for native in (False,True):
+                fitted=fit(frame,(*spec,{'native_categories':True}) if native else spec)
+                component=export_pipeline(fitted,root/'model.dat','model.dat')
+                if native:self.assertGreater(len(component['categoricalSplits']),0)
+                else:self.assertEqual(component['categoricalSplits'],[])
+                expected=V8Pipeline(fitted,[]).predict(cases)
+                rows=cases[FEATURES].astype(object).where(cases[FEATURES].notna(),None).to_dict('records')
+                fixtures=[{'row':row,'expected':float(p)} for row,p in zip(rows,expected)]
+                config={'root':str(root),'model':{'components':[component],'regionalWeight':0},'fixtures':fixtures}
+                file=root/'fixtures.json';file.write_text(json.dumps(config,ensure_ascii=False,allow_nan=False))
+                result=subprocess.run(['node',str(ROOT/'verify_sites_export.mjs'),str(file)],capture_output=True,text=True)
+                self.assertEqual(result.returncode,0,result.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()

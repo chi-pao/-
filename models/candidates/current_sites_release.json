@@ -1,0 +1,36 @@
+{
+  "basis": "previously_inspected_2025_transactions",
+  "independent": false,
+  "reference": {
+    "year": 2026,
+    "quarter": 4
+  },
+  "challenger_training_end_year": 2024,
+  "baseline_training_end_year": "unknown",
+  "baseline_sha256": "a446effe7ec69ad07e635739ca2a2ccfd2f20a6d19a487a632b289994834ec51",
+  "baseline": {
+    "n": 53659,
+    "median_ape_pct": 49.71566468828728,
+    "mae_yen": 12336663.662001828,
+    "within20_pct": 21.168862632549992,
+    "p90_ape_pct": 203.5091309792715
+  },
+  "challenger": {
+    "n": 53659,
+    "median_ape_pct": 27.19430562154446,
+    "mae_yen": 6600066.108493538,
+    "within20_pct": 38.6160755884381,
+    "p90_ape_pct": 95.92593311444814
+  },
+  "limitations": [
+    "2025 has been inspected in previous model research; not an independent accuracy estimate",
+    "Historical sale labels compared at the fixed current Site reference date",
+    "Incumbent training membership cannot be reconstructed from its bundle"
+  ],
+  "status": "reviewed_release",
+  "candidate_sha256": "5d5044eda04d75792df43db246693ec9407a0eb718bf18ce2f1b4d1248df582e",
+  "baseline_runtime_parity_passed": true,
+  "release_date": "2026-10-22",
+  "scope": "residential_used_house",
+  "decision": "Owner authorized adoption after improvement on existing transaction comparisons; not an independent holdout claim"
+}

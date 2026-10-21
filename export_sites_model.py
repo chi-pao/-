@@ -6,6 +6,8 @@ metadata are the only public outputs. Failure leaves the current manifest intact
 import argparse, gzip, hashlib, json, os, struct, subprocess, tempfile
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.request import urlopen
+from urllib.parse import urljoin
 from evaluation_policy import independence
 import joblib
 import numpy as np
@@ -77,6 +79,33 @@ def prediction(bundle,frame):
     if out.shape!=(len(frame),) or not np.all(np.isfinite(out)) or np.any(out<=0):raise ValueError('Invalid model predictions')
     return out
 
+SITE_ORIGIN='https://okaidoku-checker.rightharp65.chatgpt.site/'
+
+def deployed_scores(data, verifier):
+    """Compare with the actual bundled incumbent, including reviewed releases."""
+    with urlopen(SITE_ORIGIN+'models/catalog.json',timeout=30) as response:
+        catalog=json.loads(response.read(25000001))
+    current=catalog['models']['used_house'];digest=current['sourceSha256']
+    if digest==BASELINE_SHA:return None,digest
+    if len(digest)!=64 or any(c not in '0123456789abcdef' for c in digest):raise ValueError('Invalid deployed model hash')
+    parts=current['components']
+    if not parts or len(parts)>50:raise ValueError('Invalid deployed model components')
+    with tempfile.TemporaryDirectory() as temp:
+        root=Path(temp)
+        for component in parts:
+            name=component['path']
+            if not name.startswith('models/') or '..' in name or ':' in name or not name.endswith('.dat'):raise ValueError('Invalid deployed asset path')
+            with urlopen(urljoin(SITE_ORIGIN,name),timeout=60) as response:payload=response.read(25000001)
+            if len(payload)!=component['bytes'] or hashlib.sha256(payload).hexdigest()!=component['sha256']:raise ValueError('Deployed model integrity mismatch')
+            path=root/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(payload)
+        rows=[{'row':{k:numeric_json(v) for k,v in row.items()}} for row in data.to_dict('records')]
+        file=root/'private-current-comparison.json'
+        file.write_text(json.dumps({'model':dict(current,regionalWeight=current.get('regionalWeight',0)),'root':str(root),'fixtures':rows,'predictionOnly':True},ensure_ascii=False,allow_nan=False))
+        result=subprocess.run(['node',str(Path(verifier).resolve()),str(file)],check=True,capture_output=True,text=True)
+        predictions=np.asarray(json.loads(result.stdout),dtype=float)
+        if predictions.shape!=(len(data),) or not np.all(np.isfinite(predictions)) or np.any(predictions<=0):raise ValueError('Invalid deployed model predictions')
+        return scores(pd.to_numeric(data['price_yen']).to_numpy(float),predictions),digest
+
 def publish(args):
     approval=json.loads(args.approval.read_text());digest=sha(args.approved);holdout_sha=sha(args.holdout)
     if approval.get('approved') is not True or approval.get('sha256')!=digest:raise ValueError('Model approval fingerprint mismatch')
@@ -103,6 +132,8 @@ def publish(args):
         evidence['verified_model_sha256']=sorted(set(evidence['verified_model_sha256']+prior_evidence.get('verified_model_sha256',[])))
     before=scores(y,prediction(baseline,data));after=scores(y,prediction(candidate,data));prior=approval['evaluation']['incumbent']
     if not improves(before,after) or not improves(prior,after):raise ValueError('Candidate does not improve both incumbent and Site baseline')
+    deployed,deployed_sha=deployed_scores(data,args.verifier)
+    if deployed is not None and not improves(deployed,after):raise ValueError('Candidate does not improve the actual bundled Site incumbent')
     wrapper=candidate['pipeline'];components=[];out=args.output;public_root='site-models/versions/'+digest
     pipelines=[('global',None,wrapper.model)]+[(f'region-{i}',name,pipe) for i,(name,pipe) in enumerate(wrapper.regional.items())]
     for tag,region,pipe in pipelines:
@@ -122,6 +153,9 @@ def publish(args):
               'reference':REFERENCE,'training_end_year':training_end,'baseline_training_end_year':baseline_end,
               'approved_at':datetime.now(timezone.utc).isoformat(),'model':model,
               'evaluation':{'baseline':before,'incumbent':prior,'challenger':after,'holdout_sha256':holdout_sha,'holdout_rows':len(data),'holdout_year':int(years.min()),'independence':evidence}}
+    if deployed is not None:
+        manifest['deployed_incumbent_sha256']=deployed_sha
+        manifest['evaluation']['deployed_incumbent']=deployed
     path=out/'manifest.json'
     if path.exists():
         previous=json.loads(path.read_text())

@@ -5,6 +5,7 @@ on:
     paths:
       - 'research_adaptive.py'
       - 'promote_used_house.py'
+      - 'evaluation_policy.py'
       - 'tests/test_promotion.py'
       - 'export_sites_model.py'
       - 'verify_sites_export.mjs'
@@ -29,9 +30,9 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Check promotion and research Python syntax
-        run: python -m py_compile promote_used_house.py research_adaptive.py export_sites_model.py app.py
+        run: python -m py_compile evaluation_policy.py promote_used_house.py research_adaptive.py export_sites_model.py app.py
       - name: Test model promotion safeguards
-        run: python -m unittest discover -s tests -p test_promotion.py -v
+        run: python -m unittest discover -s tests -p 'test_*.py' -v
       - name: Restore training archive and V7 baseline from GitHub Release
         shell: bash
         run: |
@@ -78,17 +79,21 @@ jobs:
             git commit -m "Record autonomous learning history"
             git push
           fi
-      # 2025/2026 data were inspected in prior research and cannot be a fresh holdout.
-      # The owner must independently verify provenance and register the exact CSV hash
-      # as a repository secret. Without it, research still runs; promotion is disabled.
+      # Dates alone do not establish independence. Historical rows require a pinned
+      # private audit covering all model training, selection and evaluation exposure.
+      # Never relabel previously inspected 2024/2025 rows as unused.
       - name: Restore independently sourced holdout when configured
         shell: bash
         env:
           INDEPENDENT_HOLDOUT_URL: ${{ secrets.INDEPENDENT_HOLDOUT_URL }}
+          EVALUATION_AUDIT_URL: ${{ secrets.EVALUATION_AUDIT_URL }}
         run: |
           if [ -n "$INDEPENDENT_HOLDOUT_URL" ] && [ ! -s data/unused_holdout.csv ]; then
             mkdir -p data
             curl --fail --location --retry 3 --max-time 300 "$INDEPENDENT_HOLDOUT_URL" -o data/unused_holdout.csv
+          fi
+          if [ -n "$EVALUATION_AUDIT_URL" ]; then
+            curl --fail --location --retry 3 --max-time 300 "$EVALUATION_AUDIT_URL" -o data/evaluation_audit.json
           fi
       - name: Check independently held-out evaluation data
         id: holdout
@@ -120,8 +125,8 @@ jobs:
           import os
           import pandas as pd
           years = pd.to_numeric(pd.read_csv('data/unused_holdout.csv', usecols=['TransactionYear'])['TransactionYear'], errors='coerce')
-          if years.isna().any() or not years.ge(2026).all():
-              raise SystemExit('Holdout requires genuinely unseen transactions from 2026 onward')
+          if years.isna().any() or not years.ge(1900).all() or not years.le(2200).all() or not years.eq(years.astype(int)).all():
+              raise SystemExit('Holdout requires valid transaction years; exposure independence is checked before scoring')
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
               f.write('year=' + str(int(years.min())) + chr(10))
           PY
@@ -142,6 +147,8 @@ jobs:
       - name: Promote only after independent accuracy test
         id: promotion
         if: steps.data.outputs.available == 'true' && steps.holdout.outputs.available == 'true'
+        env:
+          EVALUATION_AUDIT_SHA256: ${{ secrets.EVALUATION_AUDIT_SHA256 }}
         run: |
           python promote_used_house.py \
             --incumbent ${{ steps.incumbent.outputs.path }} \
@@ -165,6 +172,7 @@ jobs:
         shell: bash
         env:
           INDEPENDENT_HOLDOUT_SHA256: ${{ secrets.INDEPENDENT_HOLDOUT_SHA256 }}
+          EVALUATION_AUDIT_SHA256: ${{ secrets.EVALUATION_AUDIT_SHA256 }}
         run: |
           curl --fail --location --retry 3 --max-time 300 \
             "https://github.com/chi-pao/-/releases/download/models-v1/used_house_model.joblib" \

@@ -6,6 +6,7 @@ metadata are the only public outputs. Failure leaves the current manifest intact
 import argparse, gzip, hashlib, json, os, struct, subprocess, tempfile
 from datetime import datetime, timezone
 from pathlib import Path
+from evaluation_policy import independence
 import joblib
 import numpy as np
 import pandas as pd
@@ -92,7 +93,14 @@ def publish(args):
     # exact training cutoff. Same-year data are not assumed to be unseen.
     baseline_end=int(baseline.get('training_end_year') or str(baseline.get('trained_at',''))[:4])
     training_end=int(candidate['training_end_year'])
-    if not np.all(np.isfinite(years)) or np.any(years<=max(baseline_end,training_end)):raise ValueError('Holdout must postdate both models; the bundled Site baseline was saved in '+str(baseline_end))
+    original_sha=approval['evaluation'].get('candidate_sha256',digest)
+    evidence=independence(data,args.holdout,{BASELINE_SHA:baseline_end,original_sha:training_end})
+    if evidence['method']=='audited_unused_rows':
+        prior_evidence=approval['evaluation'].get('independence',{})
+        if prior_evidence.get('audit_sha256')!=evidence['audit_sha256']:raise ValueError('Promotion/export audit mismatch')
+        # Public metadata binds the verified source candidate to its approved artifact.
+        evidence['approved_model_sha256']=digest
+        evidence['verified_model_sha256']=sorted(set(evidence['verified_model_sha256']+prior_evidence.get('verified_model_sha256',[])))
     before=scores(y,prediction(baseline,data));after=scores(y,prediction(candidate,data));prior=approval['evaluation']['incumbent']
     if not improves(before,after) or not improves(prior,after):raise ValueError('Candidate does not improve both incumbent and Site baseline')
     wrapper=candidate['pipeline'];components=[];out=args.output;public_root='site-models/versions/'+digest
@@ -113,7 +121,7 @@ def publish(args):
     manifest={'schema':schema,'status':'approved','model_key':'used_house','model_sha256':digest,'baseline_sha256':BASELINE_SHA,
               'reference':REFERENCE,'training_end_year':training_end,'baseline_training_end_year':baseline_end,
               'approved_at':datetime.now(timezone.utc).isoformat(),'model':model,
-              'evaluation':{'baseline':before,'incumbent':prior,'challenger':after,'holdout_sha256':holdout_sha,'holdout_rows':len(data),'holdout_year':int(years.min())}}
+              'evaluation':{'baseline':before,'incumbent':prior,'challenger':after,'holdout_sha256':holdout_sha,'holdout_rows':len(data),'holdout_year':int(years.min()),'independence':evidence}}
     path=out/'manifest.json'
     if path.exists():
         previous=json.loads(path.read_text())

@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+from evaluation_policy import independence, sha
 import joblib
 import numpy as np
 import pandas as pd
@@ -54,8 +55,6 @@ def main():
     p.add_argument("--site", type=Path, default=Path("."))
     p.add_argument("--min-rows", type=int, default=200)
     args = p.parse_args()
-    if args.holdout_year <= 2025:
-        p.error("2024/2025 were used in previous research; require a later genuinely unseen holdout")
     data = pd.read_csv(args.holdout)
     if len(data) < args.min_rows or "price_yen" not in data:
         p.error("Independent holdout is missing price_yen or has too few records")
@@ -76,15 +75,19 @@ def main():
             p.error("This holdout was already used for model approval; provide fresh unseen data")
     incumbent = joblib.load(args.incumbent)
     challenger = joblib.load(args.challenger)
-    for label, bundle in (("incumbent", incumbent), ("challenger", challenger)):
-        cutoff = bundle.get("training_end_year") if isinstance(bundle, dict) else None
-        if cutoff is None or int(cutoff) >= args.holdout_year:
-            p.error(label + " training period cannot be proven disjoint from holdout")
+    try:
+        evidence = independence(data, args.holdout, {
+            sha(args.incumbent): incumbent.get('training_end_year'),
+            sha(args.challenger): challenger.get('training_end_year'),
+        })
+    except ValueError as exc:
+        p.error(str(exc))
     before = score(y, predict(incumbent, data))
     after = score(y, predict(challenger, data))
     report = {"incumbent": before, "challenger": after, "holdout_year": args.holdout_year,
               "holdout_rows": len(data), "holdout_sha256": holdout_sha256,
-              "input_policy": "site-residential-used-house-v2", "status": "rejected"}
+              "input_policy": "site-residential-used-house-v2", "status": "rejected",
+              "independence": evidence, "candidate_sha256": sha(args.challenger)}
     # Require material accuracy improvement and no significant regression.
     approved = (after["median_ape_pct"] <= before["median_ape_pct"] - 0.5
                 and after["mae_yen"] <= before["mae_yen"] * 1.01

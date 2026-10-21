@@ -64,6 +64,28 @@ class PromotionSafetyTests(unittest.TestCase):
         self.assertNotEqual(second.returncode, 0)
         self.assertIn("already used", second.stderr)
 
+    def test_audited_older_unused_rows_can_be_promoted(self):
+        import os
+        from evaluation_policy import sha
+        frame=pd.read_csv(self.holdout)
+        frame['TransactionYear']=2027  # CLI lower bound still honored.
+        frame['record_id']=['reserved-'+str(i) for i in range(len(frame))]
+        frame.to_csv(self.holdout,index=False)
+        for path in (self.incumbent,self.challenger):
+            item=joblib.load(path);item['training_end_year']=2028;joblib.dump(item,path)
+        audit={'schema':1,'holdout_sha256':sha(self.holdout),
+            'identity_policy':'stable-source-transaction-id-v1','source_evidence':'Synthetic test only',
+            'reserved_before_selection':True,'models':{sha(path):{
+                'complete_for':['training','selection','diagnostics','evaluation'],
+                'exposed_record_ids':['seen-transaction']
+            } for path in (self.incumbent,self.challenger)}}
+        file=self.holdout.with_name('evaluation_audit.json');file.write_text(json.dumps(audit))
+        with patch.dict(os.environ,{'EVALUATION_AUDIT_SHA256':sha(file)}):
+            result=self.run_promotion()
+        self.assertEqual(result.returncode,0,result.stderr)
+        manifest=json.loads((self.root/'models/candidates/approved_used_house.json').read_text())
+        self.assertEqual(manifest['evaluation']['independence']['method'],'audited_unused_rows')
+
     def test_worse_model_never_replaces_incumbent(self):
         joblib.dump(bundle(14000000), self.challenger)
         result = self.run_promotion()

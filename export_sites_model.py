@@ -64,7 +64,7 @@ def export_pipeline(pipe,path,public_path):
 
 def prediction(bundle,frame):
     x=frame[bundle['feature_columns']].copy()
-    if 'StationMinutes' in x:x['StationMinutes']=np.nan
+    if 'StationMinutes' in x and 'StationMinutes' not in bundle.get('site_available_features', []):x['StationMinutes']=np.nan
     if 'PriceCategory' in x:x['PriceCategory']=np.nan
     for column in bundle.get('categorical_features',[]):
         if column not in x:continue

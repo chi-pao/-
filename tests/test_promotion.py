@@ -238,5 +238,50 @@ class PrecisionResearchTests(unittest.TestCase):
                 self.assertEqual(result.returncode,0,result.stderr)
 
 
+
+class AvailableStationTests(unittest.TestCase):
+    def test_station_minutes_enter_numeric_training_columns(self):
+        from research_adaptive import model_factory, SITE_UNAVAILABLE
+        self.assertNotIn('StationMinutes', SITE_UNAVAILABLE)
+        self.assertIn('PriceCategory', SITE_UNAVAILABLE)
+        spec=('station', ['PriceCategory'],31,120,15,8,.05)
+        columns=model_factory(spec).named_steps['pre'].transformers[0][2]
+        self.assertIn('StationMinutes', columns)
+        legacy=('legacy', ['PriceCategory','StationMinutes'],31,120,15,8,.05)
+        self.assertNotIn('StationMinutes',model_factory(legacy).named_steps['pre'].transformers[0][2])
+
+    def test_station_hypothesis_is_tested_even_when_other_segments_are_worse(self):
+        from research_adaptive import propose, model_options
+        champion=('old',['PriceCategory','StationMinutes'],31,120,15,8,.05)
+        diagnostics=[{'feature':f} for f in ['BuildingAge','Structure','Area']]
+        ideas=propose(champion,diagnostics,[],52)
+        restored=[s for _,s in ideas if 'StationMinutes' not in s[1]]
+        self.assertTrue(restored)
+        self.assertTrue(all('PriceCategory' in s[1] for _,s in ideas))
+        enabled=restored[0]
+        self.assertTrue(any('StationMinutes' in s[1] for _,s in propose(enabled,diagnostics,[],53)))
+
+    def test_only_explicitly_station_aware_bundles_receive_walking_minutes(self):
+        import promote_used_house, export_sites_model
+        class Capture:
+            def predict(self,frame):
+                self.frame=frame.copy()
+                return np.full(len(frame),10000000.)
+        pipe=Capture()
+        data=pd.DataFrame({'StationMinutes':[3,np.nan], 'PriceCategory':['成約価格','成約価格']})
+        bundle={'model_key':'used_house','target_unit':'yen','feature_columns':list(data.columns),
+                'pipeline':pipe,'categorical_features':['PriceCategory']}
+        for predict in [promote_used_house.predict,export_sites_model.prediction]:
+            predict(bundle,data)
+            self.assertTrue(pipe.frame.StationMinutes.isna().all())
+            bundle['site_available_features']=['StationMinutes']
+            predict(bundle,data)
+            self.assertEqual(pipe.frame.StationMinutes.iloc[0],3)
+            self.assertTrue(pd.isna(pipe.frame.StationMinutes.iloc[1]))
+            self.assertTrue(pipe.frame.PriceCategory.isna().all())
+            del bundle['site_available_features']
+        self.assertEqual(data.StationMinutes.iloc[0],3)
+
+
 if __name__ == "__main__":
     unittest.main()

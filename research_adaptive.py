@@ -19,7 +19,7 @@ from lightgbm import LGBMRegressor
 
 # Match the fields and property scope actually available in the Sites checker.
 DATA_POLICY = 'site-residential-used-house-v2'
-SITE_UNAVAILABLE = {'StationMinutes', 'PriceCategory'}
+SITE_UNAVAILABLE = {'PriceCategory'}
 
 def normalize_city_codes(values):
     text = values.fillna('').astype(str).str.normalize('NFKC').str.strip()
@@ -223,6 +223,12 @@ def propose(champion, diagnostics, experiments, round_no, seed=42):
         settings = {**options, **changes}
         if settings != options:
             add(reason, excluded, leaves, trees, child, reg, lr, settings)
+    # Station minutes are now supplied by the Site; always compare this hypothesis,
+    # including when other error segments occupy the first diagnostic positions.
+    if 'StationMinutes' in excluded:
+        add('use available station walking minutes', [x for x in excluded if x != 'StationMinutes'], leaves, trees, child, reg, lr)
+    else:
+        add('compare without station walking minutes', list(excluded)+['StationMinutes'], leaves, trees, child, reg, lr)
     for group in priority[:3]:
         columns = FEATURE_GROUPS[group]
         if all(x in excluded for x in columns):
@@ -349,6 +355,7 @@ def run(args):
         bundle={'pipeline':V8Pipeline(final,champion[1]),'feature_columns':FEATURES,
                 'model_key':'used_house','target_unit':'yen','training_end_year':2025,'candidate_only':True,
                 'categorical_features':CATS,'data_policy':DATA_POLICY,
+                'site_available_features':(['StationMinutes'] if 'StationMinutes' not in champion[1] else []),
                 'display_name':'Feedback-driven adaptive research candidate (not approved)', 'validation_report':report}
         target=out/'adaptive_used_house_candidate.joblib';tmp=out/'adaptive_used_house_candidate.tmp.joblib'
         try:

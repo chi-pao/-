@@ -31,7 +31,7 @@ def predict(bundle, data):
         raise ValueError("Missing evaluation features: " + ", ".join(sorted(missing)))
     # Evaluate both contenders with the same fields the Site can supply.
     frame = data[list(cols)].copy()
-    if 'StationMinutes' in frame: frame['StationMinutes'] = np.nan
+    if 'StationMinutes' in frame and 'StationMinutes' not in bundle.get('site_available_features', []): frame['StationMinutes'] = np.nan
     if 'PriceCategory' in frame: frame['PriceCategory'] = np.nan
     prediction = np.asarray(pipe.predict(frame), dtype=float)
     if prediction.shape != (len(data),) or not np.all(np.isfinite(prediction)) or np.any(prediction <= 0):

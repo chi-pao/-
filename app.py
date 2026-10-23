@@ -1955,7 +1955,7 @@ if _ocr_value:
         # ローン月額（数万円）を販売価格と誤認しない。価格ラベルのある行を優先する。
         _price_candidates = []
         for _line in raw.splitlines():
-            for _m in re.finditer(r"(?<![0-9])([0-9][0-9,]*(?:\\.[0-9]+)?)\\s*万\\s*円", _line):
+            for _m in re.finditer(r"(?<![0-9])([0-9][0-9,]*(?:\.[0-9]+)?)\s*万\s*円", _line):
                 _v = float(_m.group(1).replace(",", ""))
                 if 100 <= _v <= 100000:
                     _label = bool(re.search(r"(?:販売価格|物件価格|売出価格|価格)", _line[:_m.start()]))
@@ -1964,7 +1964,7 @@ if _ocr_value:
         p = sorted(_price_candidates, key=lambda x: (x[0], x[1]), reverse=True)[0][2] if _price_candidates else None
         if p is None:
             for _line in raw.splitlines():
-                _match = re.search(r"(?<![0-9])([1-9][0-9,]{2,5})[ \\t]*(?:5H|万H|5円)", _line, re.I)
+                _match = re.search(r"(?<![0-9])([1-9][0-9,]{2,5})[ \t]*(?:5H|万H|5円)", _line, re.I)
                 if _match:
                     _candidate = float(_match.group(1).replace(",", ""))
                     if 100 <= _candidate <= 100000:
@@ -2075,7 +2075,7 @@ if _ocr_value:
 
         # 価格のOCRでは「万円」が欠落し「1740万 円」のように分断されることがある。
         if "価格" not in updated:
-            _price_candidates = re.findall(r"(?<![0-9])([1-9][0-9,]{2,5})\\s*(?:万\\s*円|万円|万\\s*H|万\\s*目)", raw)
+            _price_candidates = re.findall(r"(?<![0-9])([1-9][0-9,]{2,5})\s*(?:万\s*円|万円|万\s*H|万\s*目)", raw)
             for _candidate_text in _price_candidates:
                 _candidate = float(_candidate_text.replace(",", ""))
                 if 100 <= _candidate <= 100000:

@@ -1952,10 +1952,16 @@ if _ocr_value:
             m = re.search(pattern, raw, re.I | re.S)
             return float(m.group(1).replace(",", "")) if m else None
 
-        # SUUMOなどは「1598万円」のように価格だけを大きく表示する。
-        p = _ocr_number(r"(?:販売価格|物件価格|売出価格|価格)[^0-9]{0,45}([0-9,]+(?:\.[0-9]+)?)\s*万円")
-        if p is None:
-            p = _ocr_number(r"(?<![0-9])([0-9,]+(?:\.[0-9]+)?)\s*万円")
+        # ローン月額（数万円）を販売価格と誤認しない。価格ラベルのある行を優先する。
+        _price_candidates = []
+        for _line in raw.splitlines():
+            for _m in re.finditer(r"(?<![0-9])([0-9][0-9,]*(?:\\.[0-9]+)?)\\s*万\\s*円", _line):
+                _v = float(_m.group(1).replace(",", ""))
+                if 100 <= _v <= 100000:
+                    _label = bool(re.search(r"(?:販売価格|物件価格|売出価格|価格)", _line[:_m.start()]))
+                    _monthly = bool(re.search(r"(?:月々|月額|毎月|ローン|返済)", _line))
+                    _price_candidates.append((_label and not _monthly, not _monthly, _v))
+        p = sorted(_price_candidates, key=lambda x: (x[0], x[1]), reverse=True)[0][2] if _price_candidates else None
         if p is None:
             for _line in raw.splitlines():
                 _match = re.search(r"(?<![0-9])([1-9][0-9,]{2,5})[ \\t]*(?:5H|万H|5円)", _line, re.I)
@@ -1964,18 +1970,18 @@ if _ocr_value:
                     if 100 <= _candidate <= 100000:
                         p = _candidate
                         break
-        if p is not None and p > 0:
+        if p is not None:
             st.session_state["target_price"] = p
             updated.append("価格")
 
         # OCRの表は列ごとに分断されるため、ラベル位置と数値の近さで抽出する。
         _ocr_lines = [line.strip() for line in raw.splitlines() if line.strip()]
         _area_patterns = [
-            (r"土地\\s*面積|敷地\\s*面積", "house_land_area_input", "土地面積"),
-            (r"建物\\s*面積|延床\\s*面積", "house_building_area_input", "建物面積"),
-            (r"専有\\s*面積", "condo_area_input", "専有面積"),
+            (r"土地\s*面積|敷地\s*面積", "house_land_area_input", "土地面積"),
+            (r"建物\s*面積|延床\s*面積", "house_building_area_input", "建物面積"),
+            (r"専有\s*面積", "condo_area_input", "専有面積"),
         ]
-        _area_num = r"([0-9]{2,4}(?:[.,][0-9]{1,3})?)\\s*(?:㎡|m2|m²|平方メートル)"
+        _area_num = r"([0-9]{2,4}(?:[.,][0-9]{1,3})?)\s*(?:㎡|m2|m²|平方メートル)"
         _found_areas = {}
         for _label, _key, _name in _area_patterns:
             _value = None
@@ -1984,7 +1990,7 @@ if _ocr_value:
                 if not _label_match:
                     continue
                 _tail = _line[_label_match.end():]
-                _next_label = re.search(r"土地\\s*面積|敷地\\s*面積|建物\\s*面積|延床\\s*面積|専有\\s*面積|間取り|築年月|完成年月", _tail)
+                _next_label = re.search(r"土地\s*面積|敷地\s*面積|建物\s*面積|延床\s*面積|専有\s*面積|間取り|築年月|完成年月", _tail)
                 if _next_label:
                     _tail = _tail[:_next_label.start()]
                 _match = re.search(_area_num, _tail, re.I)
@@ -2010,6 +2016,18 @@ if _ocr_value:
             if len(_unique) == 1:
                 st.session_state["house_building_area_input"] = _unique[0]
                 updated.append("建物面積")
+
+        # 横並びの表で土地・建物の両方に同じ値を割り当てた場合を補正する。
+        if ("土地面積" in _found_areas and "建物面積" in _found_areas
+                and abs(_found_areas["土地面積"] - _found_areas["建物面積"]) < 0.01):
+            _all_values = [float(x.replace(",", ".")) for x in re.findall(_area_num, raw, re.I)]
+            _others = list(dict.fromkeys(
+                x for x in _all_values
+                if 20 <= x <= 500 and abs(x - _found_areas["土地面積"]) > 1
+            ))
+            if len(_others) == 1:
+                st.session_state["house_building_area_input"] = _others[0]
+                _found_areas["建物面積"] = _others[0]
 
         m = re.search(r"(?:完成時期|完成年月|築年月|築年|建築年|築年数)[^0-9\n]{0,35}((?:19|20)\d{2})", raw)
         if not m:
@@ -2065,17 +2083,21 @@ if _ocr_value:
                     updated.append("価格")
                     break
 
-        if "土地面積" in updated and ("築年" in updated or "建物面積" in updated):
-            st.session_state["target_type"] = "中古戸建て"
+        # 土地＋建物の情報があれば、関連記事中の「マンション」より戸建てを優先。
+        _is_house = ("土地面積" in updated and "建物面積" in updated) or (
+            re.search(r"(?:土地面積|敷地面積)", raw)
+            and re.search(r"(?:建物面積|延床面積)", raw)
+        )
+        if _is_house or re.search(r"(?:中古)?(?:一戸建て|戸建て|戸建|一軒家)", raw):
+            st.session_state["target_type"] = (
+                "新築戸建て" if re.search(r"新築(?:一戸建て|戸建て|戸建)", raw) else "中古戸建て"
+            )
             updated.append("物件種別")
-
-        m = re.search(r"(中古マンション|新築マンション|中古戸建て|新築戸建て)", raw)
-        if m:
-            st.session_state["target_type"] = m.group(1)
-            updated.append("物件種別")
-        elif re.search(r"(?:土地面積|敷地面積)", raw) and re.search(r"(?:建物面積|延床面積)", raw):
-            st.session_state["target_type"] = "中古戸建て"
-            updated.append("物件種別")
+        else:
+            m = re.search(r"(中古マンション|新築マンション|中古戸建て|新築戸建て)", raw)
+            if m:
+                st.session_state["target_type"] = m.group(1)
+                updated.append("物件種別")
 
         # 数値が読み取れてもラベルが崩れた場合、面積の単位を手がかりにする。
         if "土地面積" not in updated and "建物面積" not in updated and "専有面積" not in updated:

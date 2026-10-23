@@ -35,13 +35,21 @@ try:
         page = browser.new_page(viewport={"width": 1360, "height": 950})
         page.goto(URL, wait_until="domcontentloaded", timeout=120000)
         page.get_by_text("スクショを入れるだけで自動入力").wait_for(timeout=120000)
-        iframe = page.frame_locator('iframe[title*="property_screenshot_ocr"]')
-        try:
-            uploader = iframe.locator('input[type="file"]')
-            uploader.wait_for(timeout=20000)
-        except Exception:
-            iframe = page.frame_locator('iframe').filter(has=page.locator('#zone'))
-            uploader = iframe.locator('input[type="file"]')
+        # Streamlitのiframe titleはバージョンで変わるため、実際のファイル入力を探索する。
+        deadline = time.monotonic() + 45
+        uploader = None
+        while time.monotonic() < deadline and uploader is None:
+            for frame in page.frames:
+                try:
+                    if frame.locator('input[type="file"]').count() and frame.locator('#zone').count():
+                        uploader = frame.locator('input[type="file"]').first
+                        break
+                except Exception:
+                    pass
+            if uploader is None:
+                page.wait_for_timeout(700)
+        if uploader is None:
+            raise RuntimeError("OCRの画像アップロード欄が見つかりません。")
         uploader.set_input_files(filename)
         print("OCRと自動入力を待っています（最大120秒）。")
         try:
@@ -57,6 +65,18 @@ try:
                     report["checks"][label] = control.input_value(timeout=3000)
             except Exception as e:
                 report["checks"][label] = "取得不可: " + str(e)[:100]
+        # 実際の選択値はStreamlitのカスタムselectboxからも取得する。
+        for label in ("都道府県", "市区町村", "物件種別", "間取り"):
+            try:
+                box = page.locator('[data-testid="stSelectbox"]').filter(has_text=label).first
+                if box.count():
+                    report["checks"][label + "_表示"] = box.inner_text(timeout=3000)
+            except Exception:
+                pass
+        report["checks"]["ocr_status"] = [
+            frame.locator("#status").inner_text()
+            for frame in page.frames if frame.locator("#status").count()
+        ]
         page.screenshot(path=str(output / "result.png"), full_page=True, timeout=30000)
         browser.close()
 except Exception as e:

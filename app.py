@@ -2058,23 +2058,23 @@ if _ocr_value:
                 rest = raw[m.end():].lstrip("\n\r ")
                 address_text += rest.splitlines()[0].strip() if rest else ""
             if address_text:
-                old_address = st.session_state.get("pending_auto_address", "")
                 st.session_state["pending_auto_address"] = address_text
-                if address_text != old_address:
-                    for address_key in ("address_prefecture", "address_city", "address_district",
-                                        "_last_address_prefecture", "_last_address_city"):
-                        st.session_state.pop(address_key, None)
+                # 同じスクショを再投入した場合も住所選択を再実行する。
+                for address_key in ("address_prefecture", "address_city", "address_district",
+                                    "_last_address_prefecture", "_last_address_city",
+                                    "_ocr_address_applied", "_ocr_city_applied", "_ocr_district_applied"):
+                    st.session_state.pop(address_key, None)
                 updated.append("所在地")
 
         if "所在地" not in updated:
             _address = re.search(r"(?:北海道|東京都|京都府|大阪府|.{2,3}県)[^\n]{0,55}(?:市|区|町|村)[^\n]{0,45}", raw)
             if _address:
                 _value = _address.group().strip()
-                if _value != st.session_state.get("pending_auto_address", ""):
-                    st.session_state["pending_auto_address"] = _value
-                    for _key in ("address_prefecture", "address_city", "address_district",
-                                 "_last_address_prefecture", "_last_address_city"):
-                        st.session_state.pop(_key, None)
+                st.session_state["pending_auto_address"] = _value
+                for _key in ("address_prefecture", "address_city", "address_district",
+                             "_last_address_prefecture", "_last_address_city",
+                             "_ocr_address_applied", "_ocr_city_applied", "_ocr_district_applied"):
+                    st.session_state.pop(_key, None)
                 updated.append("所在地")
 
         # 価格のOCRでは「万円」が欠落し「1740万 円」のように分断されることがある。

@@ -2008,6 +2008,10 @@ if _ocr_value:
                 st.session_state[_key] = _value
                 _found_areas[_name] = _value
                 updated.append(_name)
+        # OCRの面積値は㎡。以前の手入力で「坪」が選ばれていても単位を揃える。
+        if _found_areas:
+            st.session_state["area_unit"] = "㎡"
+
         # 建物面積ラベルがOCRで欠落したとき、土地面積以外の㎡値を補完。
         if "土地面積" in _found_areas and "建物面積" not in _found_areas:
             _all_areas = [float(x.replace(",", ".")) for x in re.findall(_area_num, raw, re.I)]

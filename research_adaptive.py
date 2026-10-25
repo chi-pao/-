@@ -66,6 +66,30 @@ def input_frame(frame, excluded):
         x[c] = '不明' if c in CATS else np.nan
     return x
 
+def temporal_cv(data, spec, years=(2022, 2023, 2024), min_rows=1000):
+    """Score with out-of-time predictions; each row is predicted by a model
+    trained only on earlier transaction years."""
+    held_frames = []
+    held_predictions = []
+    folds = []
+    for year in years:
+        train = data.loc[pd.to_numeric(data.TransactionYear, errors='coerce') < year].reset_index(drop=True)
+        valid = data.loc[pd.to_numeric(data.TransactionYear, errors='coerce') == year].reset_index(drop=True)
+        if len(train) < min_rows or len(valid) < min_rows:
+            continue
+        model = fit(train, spec)
+        predictions = pred(model, valid, spec[1])
+        folds.append({'year': int(year), **metric(valid, predictions)})
+        held_frames.append(valid)
+        held_predictions.append(predictions)
+    if len(folds) < 2:
+        raise ValueError('At least two sufficiently large chronological validation folds are required')
+    pooled = pd.concat(held_frames, ignore_index=True)
+    pooled_predictions = np.concatenate(held_predictions)
+    return metric(pooled, pooled_predictions), folds
+
+
+
 def model_options(spec):
     """Old seven-field experiments keep exactly their original semantics."""
     return dict(spec[7]) if len(spec) == 8 else {}
@@ -278,14 +302,16 @@ def run(args):
                 for chunk in iter(lambda: stream.read(1024*1024), b''):
                     digest.update(chunk)
             fingerprints.append(digest.hexdigest())
-    signature=hashlib.sha256((DATA_POLICY+'|'+'|'.join(fingerprints)).encode()).hexdigest()
+    validation_method='rolling-origin-years-2022-2024-v1'
+    signature=hashlib.sha256((DATA_POLICY+'|'+validation_method+'|'+'|'.join(fingerprints)).encode()).hexdigest()
     data=prepare_site_training(load_history(h,300 if args.quick else None))
-    train=data.loc[data.TransactionYear<=2023].reset_index(drop=True)
-    val=data.loc[data.TransactionYear==2024].reset_index(drop=True)
+    research=data.loc[data.TransactionYear<=2024].reset_index(drop=True)
     diagnostic=data.loc[data.TransactionYear==2025].reset_index(drop=True)
-    if len(train)<100 or len(val)<100: raise RuntimeError('Insufficient train/validation data')
-    # The 2024 set is repeatedly optimized against, NOT an independent test.
-    # No automatic production promotion. Existing V7/V8 and 3 production models remain intact.
+    if len(research)<2000: raise RuntimeError('Insufficient research data')
+    if args.quick: validation_years=(2023,2024)
+    else: validation_years=(2022,2023,2024)
+    # Each scored transaction is predicted by a model trained only on earlier years.
+    # 2025 remains a diagnostic; production promotion has a separate comparison gate.
     champion=('baseline',sorted(SITE_UNAVAILABLE),127,450,60,8.0,.045)
     # Seed the search from the V8 winner when its report is available.
     v8report=out/'v8_research_report.json'
@@ -308,17 +334,20 @@ def run(args):
             else: print('Data changed; beginning a fresh search',flush=True)
         except (ValueError,OSError): pass
     champion=(champion[0],sorted(set(champion[1]) | SITE_UNAVAILABLE),*champion[2:])
-    report={'version':'adaptive-3','scope':DATA_POLICY,'site_unavailable_features':sorted(SITE_UNAVAILABLE),'status':'running','data_signature':signature,'started_at':datetime.now().isoformat(),
-        'train_n':len(train),'validation_2024_n':len(val),'diagnostic_2025_n':len(diagnostic),
-        'warning':'2024 is reused for model selection; 2025/2026 have been inspected in earlier research. Neither is a pristine holdout. No automatic production deployment.',
+    report={'version':'adaptive-4','scope':DATA_POLICY,'validation_method':validation_method,'site_unavailable_features':sorted(SITE_UNAVAILABLE),'status':'running','data_signature':signature,'started_at':datetime.now().isoformat(),
+        'research_n':len(research),'validation_years':list(validation_years),'diagnostic_2025_n':len(diagnostic),
+        'warning':'Rolling-origin validation pools out-of-time predictions from 2022-2024. 2025/2026 results were previously inspected and are diagnostics, not fresh independent evidence.',
         'experiments':completed,'champion_spec':list(champion)}
-    # Recheck champion score on same data, independent of persisted rounded metrics.
-    champion_model=fit(train,champion)
-    current_predictions=pred(champion_model,val,champion[1])
-    best=metric(val,current_predictions)
-    report['starting_2024']=dict(best)
+    # Keep the prior 2024 slice only for error-segment diagnostics; candidate selection uses all temporal folds.
+    diagnostic_train=data.loc[data.TransactionYear<2024].reset_index(drop=True)
+    val=data.loc[data.TransactionYear==2024].reset_index(drop=True)
+    if len(diagnostic_train)<1000 or len(val)<1000: raise RuntimeError('Insufficient 2024 diagnostics')
+    diagnostic_model=fit(diagnostic_train,champion)
+    current_predictions=pred(diagnostic_model,val,champion[1])
+    best, best_folds=temporal_cv(data,champion,years=validation_years,min_rows=(100 if args.quick else 1000))
+    report['starting_cv']=dict(best);report['starting_cv_folds']=best_folds
     report['starting_spec']=list(champion)
-    print(f'Adaptive research: train={len(train):,} validation={len(val):,}; baseline median APE={best["median_ape_pct"]}%',flush=True)
+    print(f'Adaptive research: rolling folds={len(best_folds)} rows={best["n"]:,}; baseline median APE={best["median_ape_pct"]}%',flush=True)
     round_no=1+max([int(x.get('round',0)) for x in completed] or [0])
     rounds=1 if args.quick else args.rounds
     for r in range(round_no,round_no+rounds):
@@ -329,24 +358,26 @@ def run(args):
         for hypothesis, spec in hypotheses:
             entry={'round':r,'name':spec[0],'hypothesis':hypothesis,'spec':list(spec),'started_at':datetime.now().isoformat()}
             try:
-                model=fit(train,spec)
-                candidate_predictions=pred(model,val,spec[1])
-                m=metric(val,candidate_predictions)
-                entry['validation_2024']=m;entry['status']='ok'
+                m, fold_metrics=temporal_cv(data,spec,years=validation_years,min_rows=(100 if args.quick else 1000))
+                entry['temporal_cv']=m;entry['folds']=fold_metrics;entry['status']='ok'
                 if better_research(m,best):
-                    champion=spec;champion_model=model;best=m;current_predictions=candidate_predictions;improvement=True
+                    champion=spec;best=m;best_folds=fold_metrics;improvement=True
+                    diagnostic_model=fit(diagnostic_train,champion)
+                    current_predictions=pred(diagnostic_model,val,champion[1])
                     entry['new_champion']=True
             except Exception as ex:
                 entry.update(status='failed',error=f'{type(ex).__name__}: {ex}')
             report['experiments'].append(entry)
             report['champion_spec']=list(champion)
-            report['best_2024']=best
+            report['best_cv']=best;report['best_cv_folds']=best_folds
             report['updated_at']=datetime.now().isoformat()
             write_json(report_path,report)
-            print(f'[{r}] {spec[0]}: {entry.get("validation_2024",{}).get("median_ape_pct","ERROR")}% best={best["median_ape_pct"]}%',flush=True)
+            print(f'[{r}] {spec[0]}: {entry.get("temporal_cv",{}).get("median_ape_pct","ERROR")}% best={best["median_ape_pct"]}%',flush=True)
         print(f'Round {r} finished; improved={improvement}; worst segment={diagnostics[0] if diagnostics else None}',flush=True)
-    # Diagnostic only, never used for selecting the champion.
-    if len(diagnostic): report['diagnostic_2025']=metric(diagnostic,pred(champion_model,diagnostic,champion[1]))
+    # Diagnostic only; refit through 2024 before scoring the previously inspected 2025 slice.
+    if len(diagnostic):
+        diagnostic_model=fit(research,champion)
+        report['diagnostic_2025']=metric(diagnostic,pred(diagnostic_model,diagnostic,champion[1]))
     report['status']='completed';report['completed_at']=datetime.now().isoformat()
     report['candidate_only']=True
     if not args.quick:

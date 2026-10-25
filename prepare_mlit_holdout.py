@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -63,7 +64,13 @@ def main():
         args.output = args.root / args.output
     if not args.metadata.is_absolute():
         args.metadata = args.root / args.metadata
-    print(json.dumps(build(args.root, args.output, args.metadata), ensure_ascii=False, indent=2))
+    report = build(args.root, args.output, args.metadata)
+    if os.environ.get("GITHUB_OUTPUT"):
+        with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as stream:
+            stream.write(f"sha256={report['holdout_sha256']}\\n")
+            stream.write(f"year={report['year']}\\n")
+            stream.write(f"quarter={report['quarter']}\\n")
+    print(json.dumps(report, ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":

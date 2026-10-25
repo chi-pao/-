@@ -27,8 +27,11 @@ def normalize(df):
     for c in ['TradePrice','Area','TotalFloorArea','StationMinutes']:
         if c not in df: df[c]=np.nan
         df[c]=pd.to_numeric(df[c],errors='coerce')
-    df['Year']=pd.to_numeric(df['Period'].astype(str).str.extract(r'(20\d{2})')[0],errors='coerce')
-    df['Quarter']=pd.to_numeric(df['Period'].astype(str).str.extract(r'第\s*([1-4１-４])')[0].replace({'１':'1','２':'2','３':'3','４':'4'}),errors='coerce')
+    period = df['Period'].astype(str) if 'Period' in df else pd.Series('', index=df.index, dtype=object)
+    period_year = pd.to_numeric(period.str.extract(r'(20\d{2})')[0], errors='coerce')
+    period_quarter = pd.to_numeric(period.str.extract(r'第\s*([1-4１-４])')[0].replace({'１':'1','２':'2','３':'3','４':'4'}), errors='coerce')
+    df['Year'] = period_year.fillna(pd.to_numeric(df.get('Year', df.get('_SourceYear')), errors='coerce'))
+    df['Quarter'] = period_quarter.fillna(pd.to_numeric(df.get('Quarter', df.get('_SourceQuarter')), errors='coerce'))
     # Missing construction year is genuinely missing, not a zero-year-old building.
     built=pd.to_numeric(df.get('BuildingYear',pd.Series(index=df.index,dtype=object)).astype(str).str.extract(r'(19\d{2}|20\d{2})')[0],errors='coerce')
     df['Age']=(df['Year']-built).where(built.le(df['Year']))

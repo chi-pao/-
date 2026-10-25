@@ -67,9 +67,9 @@ def main():
     report = build(args.root, args.output, args.metadata)
     if os.environ.get("GITHUB_OUTPUT"):
         with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as stream:
-            stream.write(f"sha256={report['holdout_sha256']}\\n")
-            stream.write(f"year={report['year']}\\n")
-            stream.write(f"quarter={report['quarter']}\\n")
+            stream.write(f"sha256={report['holdout_sha256']}\n")
+            stream.write(f"year={report['year']}\n")
+            stream.write(f"quarter={report['quarter']}\n")
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
 

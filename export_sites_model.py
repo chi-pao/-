@@ -121,9 +121,13 @@ def publish(args):
     # The saved timestamp provides a conservative upper bound, not a claimed
     # exact training cutoff. Same-year data are not assumed to be unseen.
     baseline_end=int(baseline.get('training_end_year') or str(baseline.get('trained_at',''))[:4])
+    baseline_quarter=int(baseline.get('training_end_quarter',4) or 4)
     training_end=int(candidate['training_end_year'])
+    training_quarter=int(candidate.get('training_end_quarter',4) or 4)
     original_sha=approval['evaluation'].get('candidate_sha256',digest)
-    evidence=independence(data,args.holdout,{BASELINE_SHA:baseline_end,original_sha:training_end})
+    evidence=independence(data,args.holdout,{
+        BASELINE_SHA:{'year':baseline_end,'quarter':baseline_quarter},
+        original_sha:{'year':training_end,'quarter':training_quarter}})
     if evidence['method']=='audited_unused_rows':
         prior_evidence=approval['evaluation'].get('independence',{})
         if prior_evidence.get('audit_sha256')!=evidence['audit_sha256']:raise ValueError('Promotion/export audit mismatch')
@@ -150,7 +154,7 @@ def publish(args):
     # interpret their set indexes as numeric split thresholds.
     schema=2 if any(c['categoricalSplits'] for c in components) else 1
     manifest={'schema':schema,'status':'approved','model_key':'used_house','model_sha256':digest,'baseline_sha256':BASELINE_SHA,
-              'reference':REFERENCE,'training_end_year':training_end,'baseline_training_end_year':baseline_end,
+              'reference':REFERENCE,'training_end_year':training_end,'training_end_quarter':training_quarter,'baseline_training_end_year':baseline_end,'baseline_training_end_quarter':baseline_quarter,
               'approved_at':datetime.now(timezone.utc).isoformat(),'model':model,
               'evaluation':{'baseline':before,'incumbent':prior,'challenger':after,'holdout_sha256':holdout_sha,'holdout_rows':len(data),'holdout_year':int(years.min()),'independence':evidence}}
     if deployed is not None:

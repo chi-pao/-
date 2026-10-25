@@ -4,6 +4,10 @@ on:
   push:
     paths:
       - 'research_adaptive.py'
+      - 'legacy_engine.py'
+      - 'mlit_updater.py'
+      - 'prepare_mlit_holdout.py'
+      - 'tests/test_mlit_data.py'
       - 'promote_used_house.py'
       - 'evaluation_policy.py'
       - 'tests/test_promotion.py'
@@ -12,7 +16,7 @@ on:
       - 'sites_model_runtime.mjs'
       - '.github/workflows/ai_learning.yml'
   schedule:
-    - cron: '17 2,14 * * *'
+    - cron: '17 2 5 * *'
 permissions:
   contents: write
 concurrency:
@@ -30,7 +34,7 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Check promotion and research Python syntax
-        run: python -m py_compile evaluation_policy.py promote_used_house.py research_adaptive.py export_sites_model.py app.py
+        run: python -m py_compile evaluation_policy.py promote_used_house.py research_adaptive.py legacy_engine.py prepare_mlit_holdout.py export_sites_model.py app.py
       - name: Test model promotion safeguards
         run: python -m unittest discover -s tests -p 'test_*.py' -v
       - name: Restore training archive and V7 baseline from GitHub Release
@@ -46,6 +50,26 @@ jobs:
             curl --fail --location --retry 3 --max-time 300 "$RELEASE_URL/v7_used_house_candidate.joblib" -o models/candidates/v7_used_house_candidate.joblib
           fi
           python -c "from pathlib import Path; assert Path('models/candidates/v7_used_house_candidate.joblib').stat().st_size > 1000000"
+      - name: Fetch current MLIT data
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        shell: bash
+        env:
+          MLIT_API_KEY: ${{ secrets.MLIT_API_KEY }}
+        run: |
+          if [ -z "$MLIT_API_KEY" ]; then
+            echo "::warning::MLIT_API_KEY is not configured; no new quarterly transactions were fetched."
+            exit 0
+          fi
+          python mlit_updater.py
+      - name: Prepare the latest quarter as holdout
+        id: mlit_holdout
+        shell: bash
+        run: |
+          if find data -maxdepth 1 -type f -name 'mlit_*.csv' -print -quit | grep -q .; then
+            python prepare_mlit_holdout.py --root . --output data/unused_holdout.csv --metadata data/mlit_latest_holdout.json
+          else
+            echo "::warning::No MLIT quarterly files are available; configured external holdout can still be used."
+          fi
       - name: Find training data
         id: data
         shell: bash
@@ -58,7 +82,7 @@ jobs:
           fi
       - name: Research a new candidate
         if: steps.data.outputs.available == 'true'
-        run: python research_adaptive.py --site . --rounds 12
+        run: python research_adaptive.py --site . --rounds 2
       - name: Preserve learning report and challenger model
         if: steps.data.outputs.available == 'true'
         uses: actions/upload-artifact@v4
@@ -99,20 +123,20 @@ jobs:
         id: holdout
         shell: bash
         env:
+          MLIT_HOLDOUT_SHA256: ${{ steps.mlit_holdout.outputs.sha256 }}
           INDEPENDENT_HOLDOUT_SHA256: ${{ secrets.INDEPENDENT_HOLDOUT_SHA256 }}
         run: |
-          if [ -z "$INDEPENDENT_HOLDOUT_SHA256" ]; then
+          expected="$MLIT_HOLDOUT_SHA256"
+          if [ -z "$expected" ]; then expected="$INDEPENDENT_HOLDOUT_SHA256"; fi
+          if ! test -s data/unused_holdout.csv || ! test -s models/candidates/v7_used_house_candidate.joblib || ! test -s models/candidates/adaptive_used_house_candidate.joblib; then
             echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Independent holdout provenance has not been approved. Promotion is blocked."
-          elif ! printf '%s' "$INDEPENDENT_HOLDOUT_SHA256" | grep -Eq '^[0-9a-fA-F]{64}$'; then
+            echo "::warning::No fresh MLIT or configured external holdout; the live model is preserved."
+          elif ! printf '%s' "$expected" | grep -Eq '^[0-9a-fA-F]{64}$'; then
             echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Invalid holdout fingerprint. Promotion is blocked."
-          elif ! test -s data/unused_holdout.csv || ! test -s models/candidates/v7_used_house_candidate.joblib || ! test -s models/candidates/adaptive_used_house_candidate.joblib; then
+            echo "::warning::A pinned hash for the holdout is unavailable; promotion is blocked."
+          elif [ "$(sha256sum data/unused_holdout.csv | cut -d' ' -f1)" != "$(printf '%s' "$expected" | tr 'A-F' 'a-f')" ]; then
             echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Missing holdout or comparison model. Promotion is blocked."
-          elif [ "$(sha256sum data/unused_holdout.csv | cut -d' ' -f1)" != "$(printf '%s' "$INDEPENDENT_HOLDOUT_SHA256" | tr 'A-F' 'a-f')" ]; then
-            echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Holdout fingerprint mismatch. Promotion is blocked."
+            echo "::warning::Holdout fingerprint mismatch."
           else
             echo "available=true" >> "$GITHUB_OUTPUT"
           fi

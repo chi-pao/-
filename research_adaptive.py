@@ -10,7 +10,7 @@ import joblib
 import numpy as np
 import pandas as pd
 from research_v6 import prepare, FEATURES, CATS, NUMS, REGIONS
-from legacy_engine import discover, load_history, load_external
+from legacy_engine import discover, load_history, load_external, normalize
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
@@ -34,6 +34,37 @@ def prepare_site_training(raw):
     frame = frame.loc[frame.Use.eq('住宅') & frame.BuildingAge.ge(1)].copy()
     frame['MunicipalityCode'] = normalize_city_codes(frame['MunicipalityCode'])
     return frame.reset_index(drop=True)
+
+def load_training_rows(history_path, root, quick=False):
+    historical = load_history(history_path, 300 if quick else None)
+    if quick:
+        return historical
+    metadata_path = root / 'data' / 'mlit_latest_holdout.json'
+    latest = None
+    if metadata_path.is_file():
+        try:
+            meta = json.loads(metadata_path.read_text(encoding='utf-8'))
+            latest = (int(meta['year']), int(meta['quarter']))
+        except (OSError, ValueError, KeyError, TypeError):
+            latest = None
+    recent_parts = []
+    for path in sorted((root / 'data').glob('mlit_*.csv')):
+        recent = normalize(pd.read_csv(path, low_memory=False))
+        if not recent.empty:
+            recent_parts.append(recent)
+    if latest is None and recent_parts:
+        observed = pd.concat(recent_parts, ignore_index=True, sort=False)[['Year','Quarter']].dropna()
+        if not observed.empty:
+            period = observed.astype(int).drop_duplicates().sort_values(['Year','Quarter']).iloc[-1]
+            latest = (int(period.Year), int(period.Quarter))
+    parts = [historical]
+    for recent in recent_parts:
+        if latest:
+            is_latest = recent.Year.eq(latest[0]) & recent.Quarter.eq(latest[1])
+            recent = recent.loc[~is_latest]
+        if not recent.empty:
+            parts.append(recent)
+    return pd.concat(parts, ignore_index=True, sort=False).drop_duplicates().reset_index(drop=True)
 
 # Hypotheses are chosen in advance; no unbounded search on the validation set.
 TESTS = [
@@ -293,25 +324,30 @@ def run(args):
     if not h or not h.is_file(): raise FileNotFoundError('Historical ZIP not found')
     out=site/'models'/'candidates'; out.mkdir(parents=True,exist_ok=True)
     report_path=out/'adaptive_research_report.json'
-    # Stable across runner restarts and archive re-downloads; reset only if bytes change.
+    # Re-key the search whenever the archived or downloaded MLIT data changes.
+    input_paths=[h]
+    if not args.quick:
+        input_paths.extend(sorted((root/'data').glob('mlit_*.csv')))
+    metadata_path=root/'data'/'mlit_latest_holdout.json'
+    if not args.quick and metadata_path.is_file(): input_paths.append(metadata_path)
     fingerprints=[]
-    for p in (h,):
+    for p in input_paths:
         if p and p.is_file():
             digest=hashlib.sha256()
             with p.open('rb') as stream:
                 for chunk in iter(lambda: stream.read(1024*1024), b''):
                     digest.update(chunk)
             fingerprints.append(digest.hexdigest())
-    validation_method='rolling-origin-years-2022-2024-v1'
+    validation_method='rolling-origin-available-years-excluding-latest-mlit-quarter-v1'
     signature=hashlib.sha256((DATA_POLICY+'|'+validation_method+'|'+'|'.join(fingerprints)).encode()).hexdigest()
-    data=prepare_site_training(load_history(h,300 if args.quick else None))
-    research=data.loc[data.TransactionYear<=2024].reset_index(drop=True)
-    diagnostic=data.loc[data.TransactionYear==2025].reset_index(drop=True)
-    if len(research)<2000: raise RuntimeError('Insufficient research data')
-    if args.quick: validation_years=(2023,2024)
-    else: validation_years=(2022,2023,2024)
-    # Each scored transaction is predicted by a model trained only on earlier years.
-    # 2025 remains a diagnostic; production promotion has a separate comparison gate.
+    raw=load_training_rows(h,root,args.quick)
+    data=prepare_site_training(raw)
+    if len(data)<2000: raise RuntimeError('Insufficient research data')
+    all_years=tuple(int(y) for y in sorted(pd.to_numeric(data.TransactionYear,errors='coerce').dropna().unique()) if int(y)>=2022)
+    validation_years=all_years[-2:] if args.quick else all_years
+    if len(validation_years)<2: raise RuntimeError('At least two chronological validation years are required')
+    # The newest downloaded quarter is reserved for incumbent comparison; older
+    # downloaded quarters join training and rolling out-of-time validation.
     champion=('baseline',sorted(SITE_UNAVAILABLE),127,450,60,8.0,.045)
     # Seed the search from the V8 winner when its report is available.
     v8report=out/'v8_research_report.json'
@@ -334,14 +370,16 @@ def run(args):
             else: print('Data changed; beginning a fresh search',flush=True)
         except (ValueError,OSError): pass
     champion=(champion[0],sorted(set(champion[1]) | SITE_UNAVAILABLE),*champion[2:])
-    report={'version':'adaptive-4','scope':DATA_POLICY,'validation_method':validation_method,'site_unavailable_features':sorted(SITE_UNAVAILABLE),'status':'running','data_signature':signature,'started_at':datetime.now().isoformat(),
-        'research_n':len(research),'validation_years':list(validation_years),'diagnostic_2025_n':len(diagnostic),
-        'warning':'Rolling-origin validation pools out-of-time predictions from 2022-2024. 2025/2026 results were previously inspected and are diagnostics, not fresh independent evidence.',
+    report={'version':'adaptive-5','scope':DATA_POLICY,'validation_method':validation_method,'site_unavailable_features':sorted(SITE_UNAVAILABLE),'status':'running','data_signature':signature,'started_at':datetime.now().isoformat(),
+        'training_n':len(data),'validation_years':list(validation_years),
+        'mlit_holdout_metadata':json.loads(metadata_path.read_text(encoding='utf-8')) if metadata_path.is_file() else None,
+        'warning':'The newest fetched MLIT quarter is excluded from fitting and reserved for model comparison; earlier quarters join training and rolling validation.',
         'experiments':completed,'champion_spec':list(champion)}
-    # Keep the prior 2024 slice only for error-segment diagnostics; candidate selection uses all temporal folds.
-    diagnostic_train=data.loc[data.TransactionYear<2024].reset_index(drop=True)
-    val=data.loc[data.TransactionYear==2024].reset_index(drop=True)
-    if len(diagnostic_train)<1000 or len(val)<1000: raise RuntimeError('Insufficient 2024 diagnostics')
+    # Error segments use the most recent validation year; model selection pools chronological folds.
+    diagnostic_year=validation_years[-1]
+    diagnostic_train=data.loc[data.TransactionYear<diagnostic_year].reset_index(drop=True)
+    val=data.loc[data.TransactionYear==diagnostic_year].reset_index(drop=True)
+    if len(diagnostic_train)<1000 or len(val)<1000: raise RuntimeError('Insufficient latest-year validation rows')
     diagnostic_model=fit(diagnostic_train,champion)
     current_predictions=pred(diagnostic_model,val,champion[1])
     best, best_folds=temporal_cv(data,champion,years=validation_years,min_rows=(100 if args.quick else 1000))
@@ -374,17 +412,17 @@ def run(args):
             write_json(report_path,report)
             print(f'[{r}] {spec[0]}: {entry.get("temporal_cv",{}).get("median_ape_pct","ERROR")}% best={best["median_ape_pct"]}%',flush=True)
         print(f'Round {r} finished; improved={improvement}; worst segment={diagnostics[0] if diagnostics else None}',flush=True)
-    # Diagnostic only; refit through 2024 before scoring the previously inspected 2025 slice.
-    if len(diagnostic):
-        diagnostic_model=fit(research,champion)
-        report['diagnostic_2025']=metric(diagnostic,pred(diagnostic_model,diagnostic,champion[1]))
+    report['latest_validation_fold']=best_folds[-1] if best_folds else None
     report['status']='completed';report['completed_at']=datetime.now().isoformat()
     report['candidate_only']=True
     if not args.quick:
-        full=data.loc[data.TransactionYear<=2025].reset_index(drop=True)
+        full=data.reset_index(drop=True)
         final=fit(full,champion)
+        end_year=int(pd.to_numeric(full.TransactionYear,errors='coerce').max())
+        end_quarter=int(pd.to_numeric(full.loc[full.TransactionYear.eq(end_year),'Quarter'],errors='coerce').max())
         bundle={'pipeline':V8Pipeline(final,champion[1]),'feature_columns':FEATURES,
-                'model_key':'used_house','target_unit':'yen','training_end_year':2025,'candidate_only':True,
+                'model_key':'used_house','target_unit':'yen','training_end_year':end_year,
+                'training_end_quarter':end_quarter,'candidate_only':True,
                 'categorical_features':CATS,'data_policy':DATA_POLICY,
                 'site_available_features':(['StationMinutes'] if 'StationMinutes' not in champion[1] else []),
                 'display_name':'Feedback-driven adaptive research candidate (not approved)', 'validation_report':report}

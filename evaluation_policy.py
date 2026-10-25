@@ -36,9 +36,34 @@ def independence(data, holdout, models, audit_path=None):
     path = Path(audit_path) if audit_path else Path(holdout).with_name('evaluation_audit.json')
     expected = os.environ.get('EVALUATION_AUDIT_SHA256', '').lower()
     if not expected:
-        if int(years.min()) > 2025 and all(end is not None and int(years.min()) > int(end) for end in models.values()):
-            return {'method': 'chronological', 'holdout_sha256': sha(holdout)}
-        raise ValueError('Historical/same-year holdout requires a pinned unused-row audit; year alone cannot prove independence')
+        quarters = (pd.to_numeric(data['Quarter'], errors='coerce').to_numpy(float)
+                    if 'Quarter' in data else np.full(len(years), 4.0))
+        # Missing quarter means Q4, a conservative end-of-year assumption.
+        quarters = np.where(np.isfinite(quarters), quarters, 4.0)
+        if np.any(quarters < 1) or np.any(quarters > 4) or np.any(quarters != np.floor(quarters)):
+            raise ValueError('Invalid transaction quarters')
+        holdout_periods = years * 4 + quarters
+        def end_period(value):
+            if value is None:
+                return None
+            if isinstance(value, dict):
+                year = value.get('year')
+                quarter = value.get('quarter', 4)
+            else:
+                year, quarter = value, 4
+            if year is None:
+                return None
+            year = int(year); quarter = int(quarter)
+            if quarter < 1 or quarter > 4:
+                raise ValueError('Invalid model training quarter')
+            return year * 4 + quarter
+        model_periods = [end_period(end) for end in models.values()]
+        if (all(period is not None for period in model_periods)
+                and np.min(holdout_periods) > max(model_periods)):
+            return {'method': 'chronological-quarter', 'holdout_sha256': sha(holdout),
+                    'holdout_start_period': int(np.min(holdout_periods)),
+                    'training_end_period': int(max(model_periods))}
+        raise ValueError('Holdout must be later than every model training period; same-period data requires an unused-row audit')
     if not re.fullmatch('[a-f0-9]{64}', expected) or not path.is_file() or sha(path) != expected:
         raise ValueError('Evaluation audit missing or fingerprint mismatch')
     audit = json.loads(path.read_text())

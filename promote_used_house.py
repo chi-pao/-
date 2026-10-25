@@ -98,8 +98,10 @@ def main():
     challenger = joblib.load(args.challenger)
     try:
         evidence = independence(data, args.holdout, {
-            sha(args.incumbent): incumbent.get('training_end_year'),
-            sha(args.challenger): challenger.get('training_end_year'),
+            sha(args.incumbent): {'year': incumbent.get('training_end_year'),
+                                  'quarter': incumbent.get('training_end_quarter', 4)},
+            sha(args.challenger): {'year': challenger.get('training_end_year'),
+                                   'quarter': challenger.get('training_end_quarter', 4)},
         })
     except ValueError as exc:
         p.error(str(exc))
@@ -110,6 +112,7 @@ def main():
     median_ape_delta_ci = paired_median_ape_delta_ci(y, incumbent_prediction, challenger_prediction)
     report = {"incumbent": before, "challenger": after, "holdout_year": args.holdout_year,
               "holdout_rows": len(data), "holdout_sha256": holdout_sha256,
+              "holdout_quarter": int(pd.to_numeric(data["Quarter"], errors="coerce").min()) if "Quarter" in data else None,
               "paired_median_ape_delta_95ci_percentage_points": [round(x, 4) for x in median_ape_delta_ci],
               "input_policy": "site-residential-used-house-v2", "status": "rejected",
               "independence": evidence, "candidate_sha256": sha(args.challenger)}

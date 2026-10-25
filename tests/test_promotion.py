@@ -283,5 +283,24 @@ class AvailableStationTests(unittest.TestCase):
         self.assertEqual(data.StationMinutes.iloc[0],3)
 
 
+
+class PairedAccuracyGateTests(unittest.TestCase):
+    def test_adopts_a_reliable_improvement_smaller_than_half_a_point(self):
+        import promote_used_house
+        y = np.full(220, 10_000_000.0)
+        incumbent = np.full(220, 10_100_000.0)
+        challenger = np.full(220, 10_060_000.0)
+        low, high = promote_used_house.paired_median_ape_delta_ci(y, incumbent, challenger)
+        self.assertLess(high, 0)
+        self.assertAlmostEqual((low + high) / 2, -0.4, places=2)
+
+    def test_no_change_does_not_pass_accuracy_gate(self):
+        import promote_used_house
+        y = np.full(300, 10_000_000.0)
+        prediction = np.full(300, 11_000_000.0)
+        low, high = promote_used_house.paired_median_ape_delta_ci(y, prediction, prediction)
+        self.assertEqual((low, high), (0.0, 0.0))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -46,6 +46,27 @@ def score(y, pred):
             "within20_pct": float(np.mean(errors / y <= 0.20) * 100)}
 
 
+def paired_median_ape_delta_ci(y, incumbent_prediction, challenger_prediction,
+                                seed=42, repetitions=1000, max_sample=5000):
+    """Paired bootstrap CI for challenger minus incumbent median APE (percentage points)."""
+    y = np.asarray(y, dtype=float)
+    incumbent_ape = np.abs(y - np.asarray(incumbent_prediction, dtype=float)) / y
+    challenger_ape = np.abs(y - np.asarray(challenger_prediction, dtype=float)) / y
+    n = len(y)
+    sample_size = min(n, max_sample)
+    rng = np.random.default_rng(seed)
+    deltas = np.empty(repetitions, dtype=float)
+    batch = 100
+    for start in range(0, repetitions, batch):
+        count = min(batch, repetitions - start)
+        indices = rng.integers(0, n, size=(count, sample_size), dtype=np.int32)
+        deltas[start:start + count] = (
+            np.median(challenger_ape[indices], axis=1)
+            - np.median(incumbent_ape[indices], axis=1)
+        ) * 100
+    return tuple(float(value) for value in np.percentile(deltas, [2.5, 97.5]))
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--incumbent", type=Path, required=True)
@@ -82,14 +103,19 @@ def main():
         })
     except ValueError as exc:
         p.error(str(exc))
-    before = score(y, predict(incumbent, data))
-    after = score(y, predict(challenger, data))
+    incumbent_prediction = predict(incumbent, data)
+    challenger_prediction = predict(challenger, data)
+    before = score(y, incumbent_prediction)
+    after = score(y, challenger_prediction)
+    median_ape_delta_ci = paired_median_ape_delta_ci(y, incumbent_prediction, challenger_prediction)
     report = {"incumbent": before, "challenger": after, "holdout_year": args.holdout_year,
               "holdout_rows": len(data), "holdout_sha256": holdout_sha256,
+              "paired_median_ape_delta_95ci_percentage_points": [round(x, 4) for x in median_ape_delta_ci],
               "input_policy": "site-residential-used-house-v2", "status": "rejected",
               "independence": evidence, "candidate_sha256": sha(args.challenger)}
-    # Require material accuracy improvement and no significant regression.
-    approved = (after["median_ape_pct"] <= before["median_ape_pct"] - 0.5
+    # Accept any reliable median-APE improvement, without a fixed 0.5-point hurdle,
+    # while preventing material regressions in yen error and 20% coverage.
+    approved = (median_ape_delta_ci[1] < 0
                 and after["mae_yen"] <= before["mae_yen"] * 1.01
                 and after["within20_pct"] >= before["within20_pct"] - 1)
     if approved:

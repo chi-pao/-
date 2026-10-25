@@ -6,7 +6,7 @@
   ],
   "status": "completed",
   "data_signature": "24f5ea29952b8c0feb287fc35fafb8f7dd22abbf48829905ad816ba21267f17a",
-  "started_at": "2026-10-24T14:42:52.496630",
+  "started_at": "2026-10-25T02:45:06.013001",
   "train_n": 113252,
   "validation_2024_n": 53505,
   "diagnostic_2025_n": 53659,
@@ -26283,18 +26283,3001 @@
         "bias_pct": -2.32
       },
       "status": "ok"
+    },
+    {
+      "round": 110,
+      "name": "round110_1",
+      "hypothesis": "model capacity mutation",
+      "spec": [
+        "round110_1",
+        [
+          "PriceCategory"
+        ],
+        267,
+        826,
+        37,
+        9.7626,
+        0.02313,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T02:46:05.820974",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 631.59,
+        "median_ape_pct": 25.92,
+        "within20_pct": 40.54,
+        "p90_ape_pct": 100.49,
+        "bias_pct": -2.03
+      },
+      "status": "ok"
+    },
+    {
+      "round": 110,
+      "name": "round110_2",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round110_2",
+        [
+          "PriceCategory"
+        ],
+        390,
+        889,
+        31,
+        17.46707,
+        0.02313,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T02:46:59.326244",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 628.57,
+        "median_ape_pct": 25.87,
+        "within20_pct": 40.67,
+        "p90_ape_pct": 98.62,
+        "bias_pct": -2.16
+      },
+      "status": "ok"
+    },
+    {
+      "round": 110,
+      "name": "round110_3",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round110_3",
+        [
+          "PriceCategory"
+        ],
+        390,
+        889,
+        31,
+        4.19861,
+        0.02313,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T02:48:00.223366",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.87,
+        "median_ape_pct": 25.83,
+        "within20_pct": 40.77,
+        "p90_ape_pct": 98.26,
+        "bias_pct": -2.32
+      },
+      "status": "ok"
+    },
+    {
+      "round": 110,
+      "name": "round110_4",
+      "hypothesis": "learning-rate and trees mutation",
+      "spec": [
+        "round110_4",
+        [
+          "PriceCategory"
+        ],
+        390,
+        1400,
+        31,
+        9.7626,
+        0.01448,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T02:48:56.528169",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 628.37,
+        "median_ape_pct": 25.86,
+        "within20_pct": 40.78,
+        "p90_ape_pct": 98.48,
+        "bias_pct": -2.51
+      },
+      "status": "ok"
+    },
+    {
+      "round": 110,
+      "name": "round110_5",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round110_5",
+        [
+          "PriceCategory"
+        ],
+        443,
+        721,
+        37,
+        11.54142,
+        0.02648,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T02:50:27.660952",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.86,
+        "median_ape_pct": 25.74,
+        "within20_pct": 40.86,
+        "p90_ape_pct": 98.66,
+        "bias_pct": -2.22
+      },
+      "status": "ok"
+    },
+    {
+      "round": 110,
+      "name": "round110_6",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round110_6",
+        [
+          "PriceCategory"
+        ],
+        340,
+        1101,
+        36,
+        9.13446,
+        0.02356,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T02:51:17.091464",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.83,
+        "median_ape_pct": 25.76,
+        "within20_pct": 40.76,
+        "p90_ape_pct": 98.4,
+        "bias_pct": -2.17
+      },
+      "status": "ok"
+    },
+    {
+      "round": 110,
+      "name": "round110_7",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round110_7",
+        [
+          "PriceCategory"
+        ],
+        281,
+        832,
+        37,
+        9.35901,
+        0.02152,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T02:52:32.232511",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 631.12,
+        "median_ape_pct": 25.89,
+        "within20_pct": 40.6,
+        "p90_ape_pct": 100.24,
+        "bias_pct": -2.0
+      },
+      "status": "ok"
+    },
+    {
+      "round": 110,
+      "name": "round110_8",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round110_8",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        35,
+        10.23892,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T02:53:22.878037",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.12,
+        "median_ape_pct": 25.67,
+        "within20_pct": 40.75,
+        "p90_ape_pct": 97.67,
+        "bias_pct": -2.54
+      },
+      "status": "ok",
+      "new_champion": true
+    },
+    {
+      "round": 111,
+      "name": "round111_1",
+      "hypothesis": "compare without station walking minutes",
+      "spec": [
+        "round111_1",
+        [
+          "PriceCategory",
+          "StationMinutes"
+        ],
+        511,
+        1076,
+        35,
+        10.23892,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T02:54:41.546652",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 643.44,
+        "median_ape_pct": 26.35,
+        "within20_pct": 39.73,
+        "p90_ape_pct": 99.41,
+        "bias_pct": -2.5
+      },
+      "status": "ok"
+    },
+    {
+      "round": 111,
+      "name": "round111_2",
+      "hypothesis": "remove feature group: age",
+      "spec": [
+        "round111_2",
+        [
+          "BuildingAge",
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        35,
+        10.23892,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T02:56:00.909186",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 849.52,
+        "median_ape_pct": 37.28,
+        "within20_pct": 28.09,
+        "p90_ape_pct": 155.12,
+        "bias_pct": -3.37
+      },
+      "status": "ok"
+    },
+    {
+      "round": 111,
+      "name": "round111_3",
+      "hypothesis": "remove feature group: structure",
+      "spec": [
+        "round111_3",
+        [
+          "PriceCategory",
+          "Structure"
+        ],
+        511,
+        1076,
+        35,
+        10.23892,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T02:57:38.078540",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 634.7,
+        "median_ape_pct": 26.19,
+        "within20_pct": 40.04,
+        "p90_ape_pct": 97.55,
+        "bias_pct": -2.65
+      },
+      "status": "ok"
+    },
+    {
+      "round": 111,
+      "name": "round111_4",
+      "hypothesis": "remove feature group: land",
+      "spec": [
+        "round111_4",
+        [
+          "Area",
+          "LandBuildingRatio",
+          "LogArea",
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        35,
+        10.23892,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T02:59:03.667376",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 669.51,
+        "median_ape_pct": 27.34,
+        "within20_pct": 38.96,
+        "p90_ape_pct": 102.75,
+        "bias_pct": -2.16
+      },
+      "status": "ok"
+    },
+    {
+      "round": 111,
+      "name": "round111_5",
+      "hypothesis": "model capacity mutation",
+      "spec": [
+        "round111_5",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1162,
+        26,
+        10.23892,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:00:25.803007",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.99,
+        "median_ape_pct": 25.84,
+        "within20_pct": 40.61,
+        "p90_ape_pct": 97.12,
+        "bias_pct": -2.71
+      },
+      "status": "ok"
+    },
+    {
+      "round": 111,
+      "name": "round111_6",
+      "hypothesis": "model capacity mutation",
+      "spec": [
+        "round111_6",
+        [
+          "PriceCategory"
+        ],
+        294,
+        1000,
+        46,
+        10.23892,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:01:58.308381",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.93,
+        "median_ape_pct": 25.82,
+        "within20_pct": 40.69,
+        "p90_ape_pct": 99.33,
+        "bias_pct": -1.87
+      },
+      "status": "ok"
+    },
+    {
+      "round": 111,
+      "name": "round111_7",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round111_7",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        35,
+        22.10713,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:03:04.541792",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 628.84,
+        "median_ape_pct": 25.83,
+        "within20_pct": 40.68,
+        "p90_ape_pct": 97.77,
+        "bias_pct": -2.51
+      },
+      "status": "ok"
+    },
+    {
+      "round": 111,
+      "name": "round111_8",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round111_8",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        35,
+        5.27984,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:04:24.346551",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 628.67,
+        "median_ape_pct": 25.92,
+        "within20_pct": 40.44,
+        "p90_ape_pct": 98.2,
+        "bias_pct": -2.72
+      },
+      "status": "ok"
+    },
+    {
+      "round": 112,
+      "name": "round112_1",
+      "hypothesis": "model capacity mutation",
+      "spec": [
+        "round112_1",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1162,
+        31,
+        10.23892,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:05:38.505345",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.18,
+        "median_ape_pct": 25.82,
+        "within20_pct": 40.57,
+        "p90_ape_pct": 97.28,
+        "bias_pct": -2.65
+      },
+      "status": "ok"
+    },
+    {
+      "round": 112,
+      "name": "round112_2",
+      "hypothesis": "model capacity mutation",
+      "spec": [
+        "round112_2",
+        [
+          "PriceCategory"
+        ],
+        445,
+        1000,
+        37,
+        10.23892,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:07:00.380311",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.59,
+        "median_ape_pct": 25.83,
+        "within20_pct": 40.68,
+        "p90_ape_pct": 98.53,
+        "bias_pct": -2.3
+      },
+      "status": "ok"
+    },
+    {
+      "round": 112,
+      "name": "round112_3",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round112_3",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        35,
+        19.54994,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:08:11.377181",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 629.13,
+        "median_ape_pct": 25.94,
+        "within20_pct": 40.69,
+        "p90_ape_pct": 98.29,
+        "bias_pct": -2.45
+      },
+      "status": "ok"
+    },
+    {
+      "round": 112,
+      "name": "round112_4",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round112_4",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        35,
+        4.43457,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:09:25.071854",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.45,
+        "median_ape_pct": 25.89,
+        "within20_pct": 40.64,
+        "p90_ape_pct": 97.9,
+        "bias_pct": -2.74
+      },
+      "status": "ok"
+    },
+    {
+      "round": 112,
+      "name": "round112_5",
+      "hypothesis": "learning-rate and trees mutation",
+      "spec": [
+        "round112_5",
+        [
+          "PriceCategory"
+        ],
+        511,
+        739,
+        35,
+        10.23892,
+        0.03796,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:10:37.724998",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.92,
+        "median_ape_pct": 25.82,
+        "within20_pct": 40.6,
+        "p90_ape_pct": 97.97,
+        "bias_pct": -2.31
+      },
+      "status": "ok"
+    },
+    {
+      "round": 112,
+      "name": "round112_6",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round112_6",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1067,
+        39,
+        11.94047,
+        0.02138,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:11:31.199110",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.88,
+        "median_ape_pct": 25.7,
+        "within20_pct": 40.74,
+        "p90_ape_pct": 98.75,
+        "bias_pct": -2.27
+      },
+      "status": "ok"
+    },
+    {
+      "round": 112,
+      "name": "round112_7",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round112_7",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1077,
+        43,
+        7.6728,
+        0.02492,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:12:54.014932",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 625.8,
+        "median_ape_pct": 25.73,
+        "within20_pct": 40.71,
+        "p90_ape_pct": 98.21,
+        "bias_pct": -2.39
+      },
+      "status": "ok"
+    },
+    {
+      "round": 112,
+      "name": "round112_8",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round112_8",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1206,
+        36,
+        12.0536,
+        0.02363,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:14:12.381255",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.96,
+        "median_ape_pct": 25.88,
+        "within20_pct": 40.58,
+        "p90_ape_pct": 96.9,
+        "bias_pct": -2.79
+      },
+      "status": "ok"
+    },
+    {
+      "round": 113,
+      "name": "round113_1",
+      "hypothesis": "model capacity mutation",
+      "spec": [
+        "round113_1",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1162,
+        28,
+        10.23892,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:15:43.333173",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.92,
+        "median_ape_pct": 25.8,
+        "within20_pct": 40.58,
+        "p90_ape_pct": 96.69,
+        "bias_pct": -2.68
+      },
+      "status": "ok"
+    },
+    {
+      "round": 113,
+      "name": "round113_2",
+      "hypothesis": "model capacity mutation",
+      "spec": [
+        "round113_2",
+        [
+          "PriceCategory"
+        ],
+        377,
+        1000,
+        40,
+        10.23892,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:17:06.707565",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 628.57,
+        "median_ape_pct": 25.75,
+        "within20_pct": 40.65,
+        "p90_ape_pct": 99.07,
+        "bias_pct": -2.15
+      },
+      "status": "ok"
+    },
+    {
+      "round": 113,
+      "name": "round113_3",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round113_3",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        35,
+        25.39738,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:18:20.213302",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 628.44,
+        "median_ape_pct": 25.88,
+        "within20_pct": 40.56,
+        "p90_ape_pct": 97.54,
+        "bias_pct": -2.44
+      },
+      "status": "ok"
+    },
+    {
+      "round": 113,
+      "name": "round113_4",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round113_4",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        35,
+        6.7586,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:19:37.808498",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.66,
+        "median_ape_pct": 25.73,
+        "within20_pct": 40.75,
+        "p90_ape_pct": 98.3,
+        "bias_pct": -2.49
+      },
+      "status": "ok"
+    },
+    {
+      "round": 113,
+      "name": "round113_5",
+      "hypothesis": "learning-rate and trees mutation",
+      "spec": [
+        "round113_5",
+        [
+          "PriceCategory"
+        ],
+        511,
+        818,
+        35,
+        10.23892,
+        0.0343,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:20:57.816514",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 628.53,
+        "median_ape_pct": 25.75,
+        "within20_pct": 40.71,
+        "p90_ape_pct": 97.4,
+        "bias_pct": -2.53
+      },
+      "status": "ok"
+    },
+    {
+      "round": 113,
+      "name": "round113_6",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round113_6",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1175,
+        44,
+        11.85438,
+        0.03,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:21:55.541386",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.35,
+        "median_ape_pct": 25.82,
+        "within20_pct": 40.75,
+        "p90_ape_pct": 98.01,
+        "bias_pct": -2.44
+      },
+      "status": "ok"
+    },
+    {
+      "round": 113,
+      "name": "round113_7",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round113_7",
+        [
+          "PriceCategory"
+        ],
+        389,
+        945,
+        44,
+        7.96691,
+        0.02155,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:23:25.922661",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 629.31,
+        "median_ape_pct": 25.74,
+        "within20_pct": 40.76,
+        "p90_ape_pct": 99.45,
+        "bias_pct": -2.11
+      },
+      "status": "ok"
+    },
+    {
+      "round": 113,
+      "name": "round113_8",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round113_8",
+        [
+          "PriceCategory"
+        ],
+        369,
+        1161,
+        31,
+        7.82767,
+        0.02596,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:24:32.672179",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.43,
+        "median_ape_pct": 25.77,
+        "within20_pct": 40.78,
+        "p90_ape_pct": 98.48,
+        "bias_pct": -2.24
+      },
+      "status": "ok"
+    },
+    {
+      "round": 114,
+      "name": "round114_1",
+      "hypothesis": "model capacity mutation",
+      "spec": [
+        "round114_1",
+        [
+          "PriceCategory"
+        ],
+        440,
+        1000,
+        37,
+        10.23892,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:25:51.377531",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.85,
+        "median_ape_pct": 25.86,
+        "within20_pct": 40.58,
+        "p90_ape_pct": 98.45,
+        "bias_pct": -2.27
+      },
+      "status": "ok"
+    },
+    {
+      "round": 114,
+      "name": "round114_2",
+      "hypothesis": "model capacity mutation",
+      "spec": [
+        "round114_2",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1162,
+        29,
+        10.23892,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:26:58.038642",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.64,
+        "median_ape_pct": 25.93,
+        "within20_pct": 40.69,
+        "p90_ape_pct": 97.17,
+        "bias_pct": -2.59
+      },
+      "status": "ok"
+    },
+    {
+      "round": 114,
+      "name": "round114_3",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round114_3",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        35,
+        22.86003,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:28:11.034043",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 628.15,
+        "median_ape_pct": 25.81,
+        "within20_pct": 40.64,
+        "p90_ape_pct": 97.87,
+        "bias_pct": -2.46
+      },
+      "status": "ok"
+    },
+    {
+      "round": 114,
+      "name": "round114_4",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round114_4",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        35,
+        4.206,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:29:23.405029",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.98,
+        "median_ape_pct": 25.74,
+        "within20_pct": 40.66,
+        "p90_ape_pct": 98.33,
+        "bias_pct": -2.56
+      },
+      "status": "ok"
+    },
+    {
+      "round": 114,
+      "name": "round114_5",
+      "hypothesis": "learning-rate and trees mutation",
+      "spec": [
+        "round114_5",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1212,
+        35,
+        10.23892,
+        0.02316,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:30:35.039957",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.02,
+        "median_ape_pct": 25.79,
+        "within20_pct": 40.61,
+        "p90_ape_pct": 97.6,
+        "bias_pct": -2.74
+      },
+      "status": "ok"
+    },
+    {
+      "round": 114,
+      "name": "round114_6",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round114_6",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        33,
+        8.40667,
+        0.0225,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:31:56.686783",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.4,
+        "median_ape_pct": 25.8,
+        "within20_pct": 40.55,
+        "p90_ape_pct": 97.37,
+        "bias_pct": -2.8
+      },
+      "status": "ok"
+    },
+    {
+      "round": 114,
+      "name": "round114_7",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round114_7",
+        [
+          "PriceCategory"
+        ],
+        362,
+        1317,
+        37,
+        10.29342,
+        0.03021,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:33:07.469572",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 625.63,
+        "median_ape_pct": 25.71,
+        "within20_pct": 40.77,
+        "p90_ape_pct": 98.41,
+        "bias_pct": -2.19
+      },
+      "status": "ok"
+    },
+    {
+      "round": 114,
+      "name": "round114_8",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round114_8",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1252,
+        33,
+        9.57906,
+        0.02465,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:34:38.467838",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.87,
+        "median_ape_pct": 25.84,
+        "within20_pct": 40.74,
+        "p90_ape_pct": 98.25,
+        "bias_pct": -2.56
+      },
+      "status": "ok"
+    },
+    {
+      "round": 115,
+      "name": "round115_1",
+      "hypothesis": "model capacity mutation",
+      "spec": [
+        "round115_1",
+        [
+          "PriceCategory"
+        ],
+        321,
+        1000,
+        44,
+        10.23892,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:36:06.079676",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 629.24,
+        "median_ape_pct": 25.85,
+        "within20_pct": 40.67,
+        "p90_ape_pct": 99.5,
+        "bias_pct": -2.17
+      },
+      "status": "ok"
+    },
+    {
+      "round": 115,
+      "name": "round115_2",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round115_2",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        35,
+        14.17217,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:37:11.786230",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.57,
+        "median_ape_pct": 25.83,
+        "within20_pct": 40.64,
+        "p90_ape_pct": 97.67,
+        "bias_pct": -2.34
+      },
+      "status": "ok"
+    },
+    {
+      "round": 115,
+      "name": "round115_3",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round115_3",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        35,
+        5.00307,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:38:31.958637",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 625.53,
+        "median_ape_pct": 25.86,
+        "within20_pct": 40.61,
+        "p90_ape_pct": 98.5,
+        "bias_pct": -2.45
+      },
+      "status": "ok"
+    },
+    {
+      "round": 115,
+      "name": "round115_4",
+      "hypothesis": "learning-rate and trees mutation",
+      "spec": [
+        "round115_4",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1400,
+        35,
+        10.23892,
+        0.01815,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:39:49.173517",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.87,
+        "median_ape_pct": 25.88,
+        "within20_pct": 40.71,
+        "p90_ape_pct": 98.27,
+        "bias_pct": -2.3
+      },
+      "status": "ok"
+    },
+    {
+      "round": 115,
+      "name": "round115_5",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round115_5",
+        [
+          "PriceCategory"
+        ],
+        437,
+        911,
+        28,
+        12.83544,
+        0.02997,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:41:18.412494",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.44,
+        "median_ape_pct": 25.83,
+        "within20_pct": 40.69,
+        "p90_ape_pct": 98.17,
+        "bias_pct": -2.28
+      },
+      "status": "ok"
+    },
+    {
+      "round": 115,
+      "name": "round115_6",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round115_6",
+        [
+          "PriceCategory"
+        ],
+        497,
+        1044,
+        32,
+        12.794,
+        0.02195,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:42:17.165217",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 628.49,
+        "median_ape_pct": 25.74,
+        "within20_pct": 40.64,
+        "p90_ape_pct": 98.01,
+        "bias_pct": -2.38
+      },
+      "status": "ok"
+    },
+    {
+      "round": 115,
+      "name": "round115_7",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round115_7",
+        [
+          "PriceCategory"
+        ],
+        511,
+        942,
+        44,
+        12.46753,
+        0.02848,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:43:24.725003",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.65,
+        "median_ape_pct": 25.75,
+        "within20_pct": 40.74,
+        "p90_ape_pct": 98.12,
+        "bias_pct": -2.44
+      },
+      "status": "ok"
+    },
+    {
+      "round": 115,
+      "name": "round115_8",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round115_8",
+        [
+          "PriceCategory"
+        ],
+        476,
+        1024,
+        45,
+        11.85005,
+        0.02708,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:44:24.991732",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.12,
+        "median_ape_pct": 25.75,
+        "within20_pct": 40.78,
+        "p90_ape_pct": 98.2,
+        "bias_pct": -2.34
+      },
+      "status": "ok"
+    },
+    {
+      "round": 116,
+      "name": "round116_1",
+      "hypothesis": "model capacity mutation",
+      "spec": [
+        "round116_1",
+        [
+          "PriceCategory"
+        ],
+        459,
+        1000,
+        36,
+        10.23892,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:45:35.838527",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.77,
+        "median_ape_pct": 25.85,
+        "within20_pct": 40.73,
+        "p90_ape_pct": 98.36,
+        "bias_pct": -2.45
+      },
+      "status": "ok"
+    },
+    {
+      "round": 116,
+      "name": "round116_2",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round116_2",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        35,
+        14.53333,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:46:37.839964",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 628.95,
+        "median_ape_pct": 25.95,
+        "within20_pct": 40.46,
+        "p90_ape_pct": 96.98,
+        "bias_pct": -2.74
+      },
+      "status": "ok"
+    },
+    {
+      "round": 116,
+      "name": "round116_3",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round116_3",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        35,
+        5.89218,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:47:53.233062",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.66,
+        "median_ape_pct": 25.84,
+        "within20_pct": 40.7,
+        "p90_ape_pct": 97.59,
+        "bias_pct": -2.57
+      },
+      "status": "ok"
+    },
+    {
+      "round": 116,
+      "name": "round116_4",
+      "hypothesis": "learning-rate and trees mutation",
+      "spec": [
+        "round116_4",
+        [
+          "PriceCategory"
+        ],
+        511,
+        766,
+        35,
+        10.23892,
+        0.03663,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:49:05.197431",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.69,
+        "median_ape_pct": 25.85,
+        "within20_pct": 40.71,
+        "p90_ape_pct": 97.98,
+        "bias_pct": -2.41
+      },
+      "status": "ok"
+    },
+    {
+      "round": 116,
+      "name": "round116_5",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round116_5",
+        [
+          "PriceCategory"
+        ],
+        511,
+        892,
+        28,
+        11.73042,
+        0.02137,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:50:00.003375",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 629.08,
+        "median_ape_pct": 25.82,
+        "within20_pct": 40.57,
+        "p90_ape_pct": 97.93,
+        "bias_pct": -2.45
+      },
+      "status": "ok"
+    },
+    {
+      "round": 116,
+      "name": "round116_6",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round116_6",
+        [
+          "PriceCategory"
+        ],
+        386,
+        1153,
+        41,
+        11.52916,
+        0.02122,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:50:56.566791",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.07,
+        "median_ape_pct": 25.74,
+        "within20_pct": 40.82,
+        "p90_ape_pct": 99.07,
+        "bias_pct": -2.17
+      },
+      "status": "ok"
+    },
+    {
+      "round": 116,
+      "name": "round116_7",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round116_7",
+        [
+          "PriceCategory"
+        ],
+        511,
+        887,
+        40,
+        7.88033,
+        0.02417,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:52:10.966442",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.41,
+        "median_ape_pct": 25.83,
+        "within20_pct": 40.8,
+        "p90_ape_pct": 97.58,
+        "bias_pct": -2.53
+      },
+      "status": "ok"
+    },
+    {
+      "round": 116,
+      "name": "round116_8",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round116_8",
+        [
+          "PriceCategory"
+        ],
+        511,
+        916,
+        44,
+        7.84793,
+        0.03073,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:53:10.408827",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.45,
+        "median_ape_pct": 25.75,
+        "within20_pct": 40.56,
+        "p90_ape_pct": 98.14,
+        "bias_pct": -2.52
+      },
+      "status": "ok"
+    },
+    {
+      "round": 117,
+      "name": "round117_1",
+      "hypothesis": "model capacity mutation",
+      "spec": [
+        "round117_1",
+        [
+          "PriceCategory"
+        ],
+        401,
+        1000,
+        39,
+        10.23892,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:54:10.114055",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.6,
+        "median_ape_pct": 25.76,
+        "within20_pct": 40.64,
+        "p90_ape_pct": 98.88,
+        "bias_pct": -2.1
+      },
+      "status": "ok"
+    },
+    {
+      "round": 117,
+      "name": "round117_2",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round117_2",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        35,
+        19.91041,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:55:20.952151",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 628.66,
+        "median_ape_pct": 25.83,
+        "within20_pct": 40.71,
+        "p90_ape_pct": 97.38,
+        "bias_pct": -2.45
+      },
+      "status": "ok"
+    },
+    {
+      "round": 117,
+      "name": "round117_3",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round117_3",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        35,
+        4.39104,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:56:34.327488",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.81,
+        "median_ape_pct": 25.71,
+        "within20_pct": 40.63,
+        "p90_ape_pct": 97.86,
+        "bias_pct": -2.65
+      },
+      "status": "ok"
+    },
+    {
+      "round": 117,
+      "name": "round117_4",
+      "hypothesis": "learning-rate and trees mutation",
+      "spec": [
+        "round117_4",
+        [
+          "PriceCategory"
+        ],
+        511,
+        768,
+        35,
+        10.23892,
+        0.03656,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:57:47.778992",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.15,
+        "median_ape_pct": 25.69,
+        "within20_pct": 40.63,
+        "p90_ape_pct": 99.03,
+        "bias_pct": -2.42
+      },
+      "status": "ok"
+    },
+    {
+      "round": 117,
+      "name": "round117_5",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round117_5",
+        [
+          "PriceCategory"
+        ],
+        493,
+        877,
+        40,
+        8.96445,
+        0.02513,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:58:44.694724",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.69,
+        "median_ape_pct": 25.75,
+        "within20_pct": 40.7,
+        "p90_ape_pct": 98.72,
+        "bias_pct": -2.37
+      },
+      "status": "ok"
+    },
+    {
+      "round": 117,
+      "name": "round117_6",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round117_6",
+        [
+          "PriceCategory"
+        ],
+        462,
+        1181,
+        32,
+        7.38426,
+        0.02692,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T03:59:47.835172",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.06,
+        "median_ape_pct": 25.71,
+        "within20_pct": 40.78,
+        "p90_ape_pct": 98.18,
+        "bias_pct": -2.35
+      },
+      "status": "ok"
+    },
+    {
+      "round": 117,
+      "name": "round117_7",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round117_7",
+        [
+          "PriceCategory"
+        ],
+        433,
+        1101,
+        39,
+        7.9133,
+        0.02797,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:01:14.064504",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 625.83,
+        "median_ape_pct": 25.76,
+        "within20_pct": 40.64,
+        "p90_ape_pct": 97.45,
+        "bias_pct": -2.52
+      },
+      "status": "ok"
+    },
+    {
+      "round": 117,
+      "name": "round117_8",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round117_8",
+        [
+          "PriceCategory"
+        ],
+        480,
+        1102,
+        41,
+        8.85349,
+        0.02328,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:02:26.388254",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 625.93,
+        "median_ape_pct": 25.77,
+        "within20_pct": 40.72,
+        "p90_ape_pct": 97.45,
+        "bias_pct": -2.42
+      },
+      "status": "ok"
+    },
+    {
+      "round": 118,
+      "name": "round118_1",
+      "hypothesis": "model capacity mutation",
+      "spec": [
+        "round118_1",
+        [
+          "PriceCategory"
+        ],
+        342,
+        1000,
+        42,
+        10.23892,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:03:49.953667",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.32,
+        "median_ape_pct": 25.86,
+        "within20_pct": 40.64,
+        "p90_ape_pct": 98.72,
+        "bias_pct": -2.11
+      },
+      "status": "ok"
+    },
+    {
+      "round": 118,
+      "name": "round118_2",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round118_2",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        35,
+        24.64862,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:05:00.578972",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 628.52,
+        "median_ape_pct": 25.89,
+        "within20_pct": 40.68,
+        "p90_ape_pct": 97.64,
+        "bias_pct": -2.6
+      },
+      "status": "ok"
+    },
+    {
+      "round": 118,
+      "name": "round118_3",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round118_3",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        35,
+        5.02309,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:06:18.315350",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.02,
+        "median_ape_pct": 25.82,
+        "within20_pct": 40.72,
+        "p90_ape_pct": 97.41,
+        "bias_pct": -2.67
+      },
+      "status": "ok"
+    },
+    {
+      "round": 118,
+      "name": "round118_4",
+      "hypothesis": "learning-rate and trees mutation",
+      "spec": [
+        "round118_4",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1240,
+        35,
+        10.23892,
+        0.02263,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:07:28.854964",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.72,
+        "median_ape_pct": 25.86,
+        "within20_pct": 40.58,
+        "p90_ape_pct": 97.15,
+        "bias_pct": -2.65
+      },
+      "status": "ok"
+    },
+    {
+      "round": 118,
+      "name": "round118_5",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round118_5",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1087,
+        32,
+        8.13016,
+        0.02137,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:08:50.345113",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 628.21,
+        "median_ape_pct": 25.85,
+        "within20_pct": 40.51,
+        "p90_ape_pct": 97.12,
+        "bias_pct": -2.7
+      },
+      "status": "ok"
+    },
+    {
+      "round": 118,
+      "name": "round118_6",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round118_6",
+        [
+          "PriceCategory"
+        ],
+        374,
+        1063,
+        36,
+        10.88876,
+        0.02958,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:09:57.790658",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 625.53,
+        "median_ape_pct": 25.8,
+        "within20_pct": 40.79,
+        "p90_ape_pct": 98.3,
+        "bias_pct": -2.23
+      },
+      "status": "ok"
+    },
+    {
+      "round": 118,
+      "name": "round118_7",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round118_7",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1322,
+        45,
+        12.73807,
+        0.0211,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:11:08.085044",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.02,
+        "median_ape_pct": 25.73,
+        "within20_pct": 40.68,
+        "p90_ape_pct": 97.59,
+        "bias_pct": -2.44
+      },
+      "status": "ok"
+    },
+    {
+      "round": 118,
+      "name": "round118_8",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round118_8",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1310,
+        30,
+        13.2194,
+        0.02793,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:12:42.398952",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.64,
+        "median_ape_pct": 25.73,
+        "within20_pct": 40.7,
+        "p90_ape_pct": 98.44,
+        "bias_pct": -2.46
+      },
+      "status": "ok"
+    },
+    {
+      "round": 119,
+      "name": "round119_1",
+      "hypothesis": "model capacity mutation",
+      "spec": [
+        "round119_1",
+        [
+          "PriceCategory"
+        ],
+        379,
+        1000,
+        40,
+        10.23892,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:14:10.819230",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 628.75,
+        "median_ape_pct": 25.77,
+        "within20_pct": 40.74,
+        "p90_ape_pct": 99.15,
+        "bias_pct": -2.18
+      },
+      "status": "ok"
+    },
+    {
+      "round": 119,
+      "name": "round119_2",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round119_2",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        35,
+        24.75534,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:15:15.015082",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.83,
+        "median_ape_pct": 25.82,
+        "within20_pct": 40.68,
+        "p90_ape_pct": 98.2,
+        "bias_pct": -2.22
+      },
+      "status": "ok"
+    },
+    {
+      "round": 119,
+      "name": "round119_3",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round119_3",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        35,
+        7.46725,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:16:27.057967",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.7,
+        "median_ape_pct": 25.88,
+        "within20_pct": 40.58,
+        "p90_ape_pct": 97.79,
+        "bias_pct": -2.56
+      },
+      "status": "ok"
+    },
+    {
+      "round": 119,
+      "name": "round119_4",
+      "hypothesis": "learning-rate and trees mutation",
+      "spec": [
+        "round119_4",
+        [
+          "PriceCategory"
+        ],
+        511,
+        966,
+        35,
+        10.23892,
+        0.02907,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:17:41.750274",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.04,
+        "median_ape_pct": 25.85,
+        "within20_pct": 40.61,
+        "p90_ape_pct": 97.84,
+        "bias_pct": -2.56
+      },
+      "status": "ok"
+    },
+    {
+      "round": 119,
+      "name": "round119_5",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round119_5",
+        [
+          "PriceCategory"
+        ],
+        511,
+        884,
+        41,
+        11.08619,
+        0.02737,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:18:48.030200",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.99,
+        "median_ape_pct": 25.74,
+        "within20_pct": 40.78,
+        "p90_ape_pct": 97.72,
+        "bias_pct": -2.34
+      },
+      "status": "ok"
+    },
+    {
+      "round": 119,
+      "name": "round119_6",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round119_6",
+        [
+          "PriceCategory"
+        ],
+        384,
+        1090,
+        42,
+        14.47007,
+        0.02955,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:19:46.561442",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 625.95,
+        "median_ape_pct": 25.76,
+        "within20_pct": 40.81,
+        "p90_ape_pct": 98.39,
+        "bias_pct": -2.18
+      },
+      "status": "ok"
+    },
+    {
+      "round": 119,
+      "name": "round119_7",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round119_7",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1115,
+        46,
+        14.65611,
+        0.03032,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:21:06.675487",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.95,
+        "median_ape_pct": 25.74,
+        "within20_pct": 40.72,
+        "p90_ape_pct": 97.99,
+        "bias_pct": -2.37
+      },
+      "status": "ok"
+    },
+    {
+      "round": 119,
+      "name": "round119_8",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round119_8",
+        [
+          "PriceCategory"
+        ],
+        501,
+        962,
+        33,
+        12.88319,
+        0.02645,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:22:29.880584",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.92,
+        "median_ape_pct": 25.76,
+        "within20_pct": 40.88,
+        "p90_ape_pct": 97.89,
+        "bias_pct": -2.35
+      },
+      "status": "ok"
+    },
+    {
+      "round": 120,
+      "name": "round120_1",
+      "hypothesis": "model capacity mutation",
+      "spec": [
+        "round120_1",
+        [
+          "PriceCategory"
+        ],
+        442,
+        1000,
+        37,
+        10.23892,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:23:36.744102",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 628.13,
+        "median_ape_pct": 25.78,
+        "within20_pct": 40.68,
+        "p90_ape_pct": 98.25,
+        "bias_pct": -2.36
+      },
+      "status": "ok"
+    },
+    {
+      "round": 120,
+      "name": "round120_2",
+      "hypothesis": "model capacity mutation",
+      "spec": [
+        "round120_2",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1162,
+        32,
+        10.23892,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:24:45.443136",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.04,
+        "median_ape_pct": 25.85,
+        "within20_pct": 40.76,
+        "p90_ape_pct": 97.72,
+        "bias_pct": -2.38
+      },
+      "status": "ok"
+    },
+    {
+      "round": 120,
+      "name": "round120_3",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round120_3",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        35,
+        19.71244,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:26:12.031605",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.75,
+        "median_ape_pct": 25.9,
+        "within20_pct": 40.57,
+        "p90_ape_pct": 97.97,
+        "bias_pct": -2.46
+      },
+      "status": "ok"
+    },
+    {
+      "round": 120,
+      "name": "round120_4",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round120_4",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        35,
+        5.27514,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:27:28.388707",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 625.27,
+        "median_ape_pct": 25.82,
+        "within20_pct": 40.53,
+        "p90_ape_pct": 97.63,
+        "bias_pct": -2.52
+      },
+      "status": "ok"
+    },
+    {
+      "round": 120,
+      "name": "round120_5",
+      "hypothesis": "learning-rate and trees mutation",
+      "spec": [
+        "round120_5",
+        [
+          "PriceCategory"
+        ],
+        511,
+        721,
+        35,
+        10.23892,
+        0.0389,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:28:46.322720",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.67,
+        "median_ape_pct": 25.85,
+        "within20_pct": 40.8,
+        "p90_ape_pct": 98.64,
+        "bias_pct": -2.35
+      },
+      "status": "ok"
+    },
+    {
+      "round": 120,
+      "name": "round120_6",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round120_6",
+        [
+          "PriceCategory"
+        ],
+        511,
+        873,
+        28,
+        13.60859,
+        0.02759,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:29:38.325929",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 629.44,
+        "median_ape_pct": 25.76,
+        "within20_pct": 40.5,
+        "p90_ape_pct": 96.82,
+        "bias_pct": -2.58
+      },
+      "status": "ok"
+    },
+    {
+      "round": 120,
+      "name": "round120_7",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round120_7",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1082,
+        26,
+        13.86337,
+        0.02958,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:30:33.570433",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.52,
+        "median_ape_pct": 25.82,
+        "within20_pct": 40.65,
+        "p90_ape_pct": 98.11,
+        "bias_pct": -2.35
+      },
+      "status": "ok"
+    },
+    {
+      "round": 120,
+      "name": "round120_8",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round120_8",
+        [
+          "PriceCategory"
+        ],
+        382,
+        1060,
+        42,
+        7.51638,
+        0.02089,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:31:51.727870",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.47,
+        "median_ape_pct": 25.79,
+        "within20_pct": 40.79,
+        "p90_ape_pct": 99.26,
+        "bias_pct": -2.08
+      },
+      "status": "ok"
+    },
+    {
+      "round": 121,
+      "name": "round121_1",
+      "hypothesis": "model capacity mutation",
+      "spec": [
+        "round121_1",
+        [
+          "PriceCategory"
+        ],
+        362,
+        1000,
+        41,
+        10.23892,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:33:02.236424",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.14,
+        "median_ape_pct": 25.74,
+        "within20_pct": 40.81,
+        "p90_ape_pct": 98.68,
+        "bias_pct": -2.27
+      },
+      "status": "ok"
+    },
+    {
+      "round": 121,
+      "name": "round121_2",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round121_2",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        35,
+        19.62416,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:34:05.876358",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 628.52,
+        "median_ape_pct": 25.95,
+        "within20_pct": 40.66,
+        "p90_ape_pct": 96.74,
+        "bias_pct": -2.69
+      },
+      "status": "ok"
+    },
+    {
+      "round": 121,
+      "name": "round121_3",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round121_3",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1076,
+        35,
+        7.25798,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:35:19.975533",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.12,
+        "median_ape_pct": 25.82,
+        "within20_pct": 40.68,
+        "p90_ape_pct": 98.06,
+        "bias_pct": -2.56
+      },
+      "status": "ok"
+    },
+    {
+      "round": 121,
+      "name": "round121_4",
+      "hypothesis": "learning-rate and trees mutation",
+      "spec": [
+        "round121_4",
+        [
+          "PriceCategory"
+        ],
+        511,
+        867,
+        35,
+        10.23892,
+        0.03239,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:36:34.274744",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.7,
+        "median_ape_pct": 25.81,
+        "within20_pct": 40.64,
+        "p90_ape_pct": 98.23,
+        "bias_pct": -2.52
+      },
+      "status": "ok"
+    },
+    {
+      "round": 121,
+      "name": "round121_5",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round121_5",
+        [
+          "PriceCategory"
+        ],
+        511,
+        929,
+        39,
+        12.85555,
+        0.02443,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:37:32.628784",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.71,
+        "median_ape_pct": 25.71,
+        "within20_pct": 40.85,
+        "p90_ape_pct": 98.55,
+        "bias_pct": -2.39
+      },
+      "status": "ok"
+    },
+    {
+      "round": 121,
+      "name": "round121_6",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round121_6",
+        [
+          "PriceCategory"
+        ],
+        379,
+        1313,
+        44,
+        13.01842,
+        0.02574,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:38:39.827346",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 626.02,
+        "median_ape_pct": 25.86,
+        "within20_pct": 40.71,
+        "p90_ape_pct": 98.28,
+        "bias_pct": -2.2
+      },
+      "status": "ok"
+    },
+    {
+      "round": 121,
+      "name": "round121_7",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round121_7",
+        [
+          "PriceCategory"
+        ],
+        382,
+        1112,
+        35,
+        10.15349,
+        0.02748,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:40:10.231787",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 625.53,
+        "median_ape_pct": 25.73,
+        "within20_pct": 40.75,
+        "p90_ape_pct": 98.47,
+        "bias_pct": -2.35
+      },
+      "status": "ok"
+    },
+    {
+      "round": 121,
+      "name": "round121_8",
+      "hypothesis": "combined exploratory mutation",
+      "spec": [
+        "round121_8",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1196,
+        33,
+        10.01235,
+        0.0255,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0
+        }
+      ],
+      "started_at": "2026-10-25T04:41:22.816547",
+      "validation_2024": {
+        "n": 53505,
+        "mae_man_yen": 627.67,
+        "median_ape_pct": 25.86,
+        "within20_pct": 40.58,
+        "p90_ape_pct": 96.98,
+        "bias_pct": -2.74
+      },
+      "status": "ok"
     }
   ],
   "champion_spec": [
-    "round72_6",
+    "round110_8",
     [
       "PriceCategory"
     ],
-    390,
-    889,
-    31,
-    9.7626,
-    0.02313,
+    511,
+    1076,
+    35,
+    10.23892,
+    0.0261,
     {
       "native_categories": true,
       "objective": "regression_l1",
@@ -26330,92 +29313,92 @@
       "feature": "BuildingAge",
       "segment": "(48.0, 78.0]",
       "count": 9789,
-      "median_ape_pct": 39.082
+      "median_ape_pct": 39.095
     },
     {
       "feature": "Structure",
       "segment": "ブロック造",
       "count": 118,
-      "median_ape_pct": 38.376
-    },
-    {
-      "feature": "Prefecture",
-      "segment": "秋田県",
-      "count": 389,
-      "median_ape_pct": 37.49
+      "median_ape_pct": 37.589
     },
     {
       "feature": "Area",
       "segment": "(290.0, 1900.0]",
       "count": 10143,
-      "median_ape_pct": 37.449
+      "median_ape_pct": 37.409
     },
     {
       "feature": "Prefecture",
       "segment": "島根県",
       "count": 216,
-      "median_ape_pct": 36.953
-    },
-    {
-      "feature": "Prefecture",
-      "segment": "山口県",
-      "count": 657,
-      "median_ape_pct": 36.78
+      "median_ape_pct": 37.347
     },
     {
       "feature": "BuildingAge",
       "segment": "(37.0, 48.0]",
       "count": 11150,
-      "median_ape_pct": 36.317
+      "median_ape_pct": 36.247
     },
     {
-      "feature": "Structure",
-      "segment": "ＲＣ",
-      "count": 870,
-      "median_ape_pct": 32.508
+      "feature": "Prefecture",
+      "segment": "香川県",
+      "count": 391,
+      "median_ape_pct": 35.979
+    },
+    {
+      "feature": "Prefecture",
+      "segment": "秋田県",
+      "count": 389,
+      "median_ape_pct": 35.935
     },
     {
       "feature": "BuildingAge",
       "segment": "(27.0, 37.0]",
       "count": 10223,
-      "median_ape_pct": 32.007
+      "median_ape_pct": 32.365
+    },
+    {
+      "feature": "Structure",
+      "segment": "ＲＣ",
+      "count": 870,
+      "median_ape_pct": 32.253
     },
     {
       "feature": "Structure",
       "segment": "ＲＣ、木造",
       "count": 126,
-      "median_ape_pct": 31.772
+      "median_ape_pct": 31.699
     },
     {
       "feature": "Area",
       "segment": "(200.0, 290.0]",
       "count": 10358,
-      "median_ape_pct": 27.745
+      "median_ape_pct": 27.692
     },
     {
       "feature": "StationMinutes",
       "segment": "(-0.001, 8.0]",
       "count": 8423,
-      "median_ape_pct": 25.716
+      "median_ape_pct": 25.861
     }
   ],
   "best_2024": {
     "n": 53505,
-    "mae_man_yen": 628.68,
-    "median_ape_pct": 25.69,
-    "within20_pct": 40.89,
-    "p90_ape_pct": 98.78,
-    "bias_pct": -2.18
+    "mae_man_yen": 627.12,
+    "median_ape_pct": 25.67,
+    "within20_pct": 40.75,
+    "p90_ape_pct": 97.67,
+    "bias_pct": -2.54
   },
-  "updated_at": "2026-10-24T16:02:40.818087",
+  "updated_at": "2026-10-25T04:42:46.777513",
   "diagnostic_2025": {
     "n": 53659,
-    "mae_man_yen": 666.14,
-    "median_ape_pct": 26.99,
-    "within20_pct": 38.88,
-    "p90_ape_pct": 100.79,
-    "bias_pct": -4.03
+    "mae_man_yen": 663.58,
+    "median_ape_pct": 27.01,
+    "within20_pct": 39.04,
+    "p90_ape_pct": 99.41,
+    "bias_pct": -4.35
   },
-  "completed_at": "2026-10-24T16:02:53.755965",
+  "completed_at": "2026-10-25T04:43:03.730712",
   "candidate_only": true
 }

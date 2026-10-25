@@ -111,7 +111,8 @@ def main():
     after = score(y, challenger_prediction)
     median_ape_delta_ci = paired_median_ape_delta_ci(y, incumbent_prediction, challenger_prediction)
     report = {"incumbent": before, "challenger": after, "holdout_year": args.holdout_year,
-              "holdout_rows": len(data), "holdout_sha256": holdout_sha256,\n              "holdout_quarter": int(pd.to_numeric(data["Quarter"], errors="coerce").min()) if "Quarter" in data else None,
+              "holdout_rows": len(data), "holdout_sha256": holdout_sha256,
+              "holdout_quarter": int(pd.to_numeric(data["Quarter"], errors="coerce").min()) if "Quarter" in data else None,
               "paired_median_ape_delta_95ci_percentage_points": [round(x, 4) for x in median_ape_delta_ci],
               "input_policy": "site-residential-used-house-v2", "status": "rejected",
               "independence": evidence, "candidate_sha256": sha(args.challenger)}

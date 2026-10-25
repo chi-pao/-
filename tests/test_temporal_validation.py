@@ -48,6 +48,43 @@ class TemporalValidationTests(unittest.TestCase):
                     years=(2022, 2023), min_rows=1,
                 )
 
+    def test_confirmation_years_are_excluded_from_selection_and_saved_as_paired_predictions(self):
+        import tempfile
+        from pathlib import Path
+
+        frame = pd.DataFrame({
+            "TransactionYear": [2022, 2022, 2023, 2023, 2024, 2024, 2025, 2025],
+            "price_man": [100, 200, 110, 220, 120, 240, 130, 260],
+        })
+        trained_through = []
+
+        def fake_fit(train, spec):
+            trained_through.append(int(train.TransactionYear.max()))
+            return spec[0]
+
+        def fake_pred(model, valid, excluded):
+            factor = 1.2 if model == "baseline" else 1.05
+            return valid.price_man.to_numpy(dtype=float) * factor
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "confirmation.csv"
+            with patch.object(research_adaptive, "fit", side_effect=fake_fit), \
+                 patch.object(research_adaptive, "pred", side_effect=fake_pred):
+                result = research_adaptive.temporal_confirmation(
+                    frame,
+                    ("baseline", [], 1, 1, 1, 1, 0.1),
+                    ("challenger", [], 1, 1, 1, 1, 0.1),
+                    [2024, 2025], path, min_rows=1,
+                )
+
+            predictions = pd.read_csv(path)
+
+        self.assertEqual(trained_through, [2023, 2023, 2024, 2024])
+        self.assertEqual(result["years"], [2024, 2025])
+        self.assertEqual(predictions.TransactionYear.unique().tolist(), [2024, 2025])
+        self.assertTrue((predictions.challenger_prediction_yen < predictions.baseline_prediction_yen).all())
+        self.assertEqual(result["validation_rows"], 4)
+
 
 if __name__ == "__main__":
     unittest.main()

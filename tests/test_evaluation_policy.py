@@ -33,7 +33,7 @@ class EvaluationPolicyTests(unittest.TestCase):
         self.data.to_csv(self.holdout,index=False);self.audit['holdout_sha256']=sha(self.holdout)
         self.assertEqual(self.verify()['method'],'audited_unused_rows')
     def test_old_rows_without_evidence_fail(self):
-        with patch.dict(os.environ,{'EVALUATION_AUDIT_SHA256':''}),self.assertRaisesRegex(ValueError,'pinned'):
+        with patch.dict(os.environ,{'EVALUATION_AUDIT_SHA256':''}),self.assertRaisesRegex(ValueError,'unused-row audit'):
             independence(self.data,self.holdout,self.models)
     def test_overlap_fails_for_either_model(self):
         for m in self.models:
@@ -62,7 +62,7 @@ class EvaluationPolicyTests(unittest.TestCase):
     def test_future_chronological_path_still_works(self):
         self.data['TransactionYear']=2027
         with patch.dict(os.environ,{'EVALUATION_AUDIT_SHA256':''}):
-            self.assertEqual(independence(self.data,self.holdout,self.models)['method'],'chronological')
+            self.assertEqual(independence(self.data,self.holdout,self.models)['method'],'chronological-quarter')
     def test_invalid_year_rejected_even_with_audit(self):
         for year in (2024.5,0,float('nan')):
             self.data['TransactionYear']=year

@@ -9,8 +9,10 @@ on:
       - 'prepare_mlit_holdout.py'
       - 'tests/test_mlit_data.py'
       - 'promote_used_house.py'
+      - 'promote_used_house_cv.py'
       - 'evaluation_policy.py'
       - 'tests/test_promotion.py'
+      - 'tests/test_cv_promotion.py'
       - 'export_sites_model.py'
       - 'verify_sites_export.mjs'
       - 'sites_model_runtime.mjs'
@@ -34,7 +36,7 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Check promotion and research Python syntax
-        run: python -m py_compile evaluation_policy.py promote_used_house.py research_adaptive.py legacy_engine.py prepare_mlit_holdout.py export_sites_model.py app.py
+        run: python -m py_compile evaluation_policy.py promote_used_house.py promote_used_house_cv.py research_adaptive.py legacy_engine.py prepare_mlit_holdout.py export_sites_model.py app.py
       - name: Test model promotion safeguards
         run: python -m unittest discover -s tests -p 'test_*.py' -v
       - name: Restore training archive and V7 baseline from GitHub Release
@@ -179,8 +181,16 @@ jobs:
             --challenger models/candidates/adaptive_used_house_candidate.joblib \
             --holdout data/unused_holdout.csv \
             --holdout-year ${{ steps.holdoutyear.outputs.year }} --site .
+      - name: Provisional promotion from reserved rolling-origin year
+        id: promotion_cv
+        if: steps.data.outputs.available == 'true' && steps.holdout.outputs.available != 'true'
+        run: |
+          python promote_used_house_cv.py \
+            --candidate models/candidates/adaptive_used_house_candidate.joblib \
+            --report models/candidates/adaptive_research_report.json \
+            --predictions data/rolling_origin_confirmation.csv --site .
       - name: Commit approved artifacts only
-        if: steps.promotion.outcome == 'success'
+        if: steps.promotion.outcome == 'success' || steps.promotion_cv.outputs.promoted == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

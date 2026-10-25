@@ -302,5 +302,30 @@ class PairedAccuracyGateTests(unittest.TestCase):
         self.assertEqual((low, high), (0.0, 0.0))
 
 
+
+class QuarterChronologyTests(unittest.TestCase):
+    def test_newer_quarter_in_same_calendar_year_is_a_valid_holdout(self):
+        import evaluation_policy
+        data = pd.DataFrame({"TransactionYear": [2026, 2026], "Quarter": [2, 2]})
+        holdout = Path(tempfile.mktemp(suffix=".csv"))
+        self.addCleanup(lambda: holdout.unlink(missing_ok=True))
+        holdout.write_text("test")
+        evidence = evaluation_policy.independence(
+            data, holdout, {"candidate-sha": {"year": 2026, "quarter": 1}}
+        )
+        self.assertEqual(evidence["method"], "chronological-quarter")
+
+    def test_same_training_quarter_is_rejected(self):
+        import evaluation_policy
+        data = pd.DataFrame({"TransactionYear": [2026, 2026], "Quarter": [1, 1]})
+        holdout = Path(tempfile.mktemp(suffix=".csv"))
+        self.addCleanup(lambda: holdout.unlink(missing_ok=True))
+        holdout.write_text("test")
+        with self.assertRaisesRegex(ValueError, "later than every model training period"):
+            evaluation_policy.independence(
+                data, holdout, {"candidate-sha": {"year": 2026, "quarter": 1}}
+            )
+
+
 if __name__ == "__main__":
     unittest.main()

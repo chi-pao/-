@@ -1946,6 +1946,13 @@ if _ocr_value:
         st.session_state["_last_ocr_nonce"] = _payload.get("nonce")
         raw = unicodedata.normalize("NFKC", str(_payload.get("text", "")))
         raw = re.sub(r"[ \t]+", " ", raw)
+        # 日本語OCRで「土 地 面 積」などと文字が分断される場合を正規化する。
+        for _broken, _correct in ((r"土\\s*地\\s*面\\s*積", "土地面積"),
+                                   (r"建\\s*物\\s*面\\s*積", "建物面積"),
+                                   (r"敷\\s*地\\s*面\\s*積", "敷地面積"),
+                                   (r"延\\s*床\\s*面\\s*積", "延床面積"),
+                                   (r"専\\s*有\\s*面\\s*積", "専有面積")):
+            raw = re.sub(_broken.replace("\\\\", "\\"), _correct, raw)
         st.session_state["_ocr_last_text"] = raw
         updated = []
         def _ocr_number(pattern):
@@ -2050,6 +2057,8 @@ if _ocr_value:
         m = re.search(r"(?:住所|所在地)[ \t:：]*([^\n\r]+)", raw)
         if m:
             address_text = m.group(1).strip()
+            # OCRが日本語の地名の途中に入れた空白は住所選択の妨げになるため除去。
+            address_text = re.sub(r"(?<=[一-龥ぁ-んァ-ヶ])\\s+(?=[一-龥ぁ-んァ-ヶ])".replace("\\\\", "\\"), "", address_text)
             _pref_start = re.search(r"(?:北海道|東京都|京都府|大阪府|[一-龥]{2,3}県)", address_text)
             if _pref_start:
                 address_text = address_text[_pref_start.start():]

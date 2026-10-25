@@ -1,6 +1,6 @@
 """Adaptive price research with categorical, robust-loss and recency experiments.
-Keeps production models and V7 candidate untouched. 2024 is development validation;
-2025/2026 were previously inspected, so neither is an untouched test set.
+Model selection uses older rolling folds; the newest one or two years are reserved
+for a separate provisional confirmation and never guide the experiment search.
 """
 from __future__ import annotations
 import argparse, json, os, sys, time, traceback, hashlib
@@ -118,6 +118,46 @@ def temporal_cv(data, spec, years=(2022, 2023, 2024), min_rows=1000):
     pooled = pd.concat(held_frames, ignore_index=True)
     pooled_predictions = np.concatenate(held_predictions)
     return metric(pooled, pooled_predictions), folds
+
+
+def temporal_confirmation(data, baseline_spec, candidate_spec, years, output_path, min_rows=1000):
+    """Compare the selected challenger with its starting model on a later year.
+
+    These confirmation years are excluded from every experiment that selects the
+    challenger. Predictions are out-of-time; the compact row-level file is only
+    a workflow-local input to the paired promotion gate and is never committed.
+    """
+    transaction_years = pd.to_numeric(data.TransactionYear, errors='coerce')
+    parts = []
+    fold_results = []
+    for year in years:
+        train = data.loc[transaction_years < year].reset_index(drop=True)
+        valid = data.loc[transaction_years == year].reset_index(drop=True)
+        if len(train) < min_rows or len(valid) < min_rows:
+            raise ValueError(f'Insufficient rolling-origin confirmation rows for {year}')
+        baseline_model = fit(train, baseline_spec)
+        candidate_model = fit(train, candidate_spec)
+        baseline_predictions = pred(baseline_model, valid, baseline_spec[1]) * 10000
+        candidate_predictions = pred(candidate_model, valid, candidate_spec[1]) * 10000
+        truth = valid.price_man.to_numpy(dtype=float) * 10000
+        parts.append(pd.DataFrame({
+            'TransactionYear': valid.TransactionYear.to_numpy(),
+            'price_yen': truth,
+            'baseline_prediction_yen': baseline_predictions,
+            'challenger_prediction_yen': candidate_predictions,
+        }))
+        fold_results.append({
+            'year': int(year), 'rows': int(len(valid)),
+            'baseline': metric(valid, baseline_predictions / 10000),
+            'challenger': metric(valid, candidate_predictions / 10000),
+        })
+    compact = pd.concat(parts, ignore_index=True)
+    compact.to_csv(output_path, index=False)
+    return {
+        'method': 'rolling-origin-confirmation-v1', 'years': [int(year) for year in years],
+        'validation_rows': int(len(compact)), 'folds': fold_results,
+        'prediction_file': str(output_path),
+    }
 
 
 
@@ -338,14 +378,17 @@ def run(args):
                 for chunk in iter(lambda: stream.read(1024*1024), b''):
                     digest.update(chunk)
             fingerprints.append(digest.hexdigest())
-    validation_method='rolling-origin-available-years-excluding-latest-mlit-quarter-v1'
+    validation_method='rolling-origin-selection-reserved-confirmation-years-excluding-latest-mlit-quarter-v2'
     signature=hashlib.sha256((DATA_POLICY+'|'+validation_method+'|'+'|'.join(fingerprints)).encode()).hexdigest()
     raw=load_training_rows(h,root,args.quick)
     data=prepare_site_training(raw)
     if len(data)<2000: raise RuntimeError('Insufficient research data')
     all_years=tuple(int(y) for y in sorted(pd.to_numeric(data.TransactionYear,errors='coerce').dropna().unique()) if int(y)>=2022)
-    validation_years=all_years[-2:] if args.quick else all_years
-    if len(validation_years)<2: raise RuntimeError('At least two chronological validation years are required')
+    if len(all_years)<3 and not args.quick:
+        raise RuntimeError('At least three chronological years are required for selection plus confirmation')
+    confirmation_years = all_years[-2:] if len(all_years) >= 4 else all_years[-1:]
+    validation_years = all_years[-2:] if args.quick else all_years[:-len(confirmation_years)]
+    if len(validation_years)<2: raise RuntimeError('At least two chronological selection folds are required')
     # The newest downloaded quarter is reserved for incumbent comparison; older
     # downloaded quarters join training and rolling out-of-time validation.
     champion=('baseline',sorted(SITE_UNAVAILABLE),127,450,60,8.0,.045)
@@ -367,7 +410,12 @@ def run(args):
                 completed=old.get('experiments',[])
                 c=old.get('champion_spec')
                 if c and len(c) in (7,8): champion=tuple(c)
-            else: print('Data changed; beginning a fresh search',flush=True)
+            else:
+                # Keep the last successful search configuration as the starting
+                # incumbent, but never re-use its experiment history on new data.
+                c=old.get('champion_spec')
+                if c and len(c) in (7,8): champion=tuple(c)
+                print('Data or validation policy changed; restarting experiments from the prior champion',flush=True)
         except (ValueError,OSError): pass
     champion=(champion[0],sorted(set(champion[1]) | SITE_UNAVAILABLE),*champion[2:])
     report={'version':'adaptive-5','scope':DATA_POLICY,'validation_method':validation_method,'site_unavailable_features':sorted(SITE_UNAVAILABLE),'status':'running','data_signature':signature,'started_at':datetime.now().isoformat(),
@@ -382,6 +430,7 @@ def run(args):
     if len(diagnostic_train)<1000 or len(val)<1000: raise RuntimeError('Insufficient latest-year validation rows')
     diagnostic_model=fit(diagnostic_train,champion)
     current_predictions=pred(diagnostic_model,val,champion[1])
+    starting_spec=tuple(champion)
     best, best_folds=temporal_cv(data,champion,years=validation_years,min_rows=(100 if args.quick else 1000))
     report['starting_cv']=dict(best);report['starting_cv_folds']=best_folds
     report['starting_spec']=list(champion)
@@ -416,6 +465,10 @@ def run(args):
     report['status']='completed';report['completed_at']=datetime.now().isoformat()
     report['candidate_only']=True
     if not args.quick:
+        confirmation_path=root/'data'/'rolling_origin_confirmation.csv'
+        report['internal_cv_confirmation']=temporal_confirmation(
+            data, starting_spec, champion, confirmation_years, confirmation_path)
+        report['internal_cv_confirmation']['data_signature']=signature
         full=data.reset_index(drop=True)
         final=fit(full,champion)
         end_year=int(pd.to_numeric(full.TransactionYear,errors='coerce').max())

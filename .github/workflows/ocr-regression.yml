@@ -1,0 +1,18 @@
+name: OCR regression tests
+on:
+  push:
+    paths:
+      - app.py
+      - test_ocr_regression.py
+      - .github/workflows/ocr-regression.yml
+  workflow_dispatch:
+jobs:
+  test-ocr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test OCR parsing (offline)
+        run: python -m unittest -v test_ocr_regression.py

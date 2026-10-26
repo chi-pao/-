@@ -1,9 +1,21 @@
 # 公開サイトのスクショ自動入力テスト（Windows）
 # 実行: py auto_test.py
-import sys, subprocess, json, time, pathlib, tkinter as tk
+import sys, subprocess, json, time, pathlib, tkinter as tk, re
 from tkinter import filedialog
 
 URL = "https://okaidokucyekka.streamlit.app/"
+# 実際に共有された2つの参考物件。全項目一致時のみ PASS とする。
+REFERENCE_CASES = {
+    1598: {"price": 1598, "pref": "山口県", "city": "宇部市",
+           "address": "際波", "year": 1990, "land": 208.84,
+           "building": 114.98, "type": "中古戸建て"},
+    1740: {"price": 1740, "pref": "山口県", "city": "宇部市",
+           "address": "西岐波", "year": 2014, "land": 422.0,
+           "building": 67.9, "type": "中古戸建て"},
+}
+def number(value):
+    match = re.search(r"[0-9]+(?:\.[0-9]+)?", str(value).replace(",", ""))
+    return float(match.group()) if match else None
 def ensure_playwright():
     try:
         from playwright.sync_api import sync_playwright
@@ -66,7 +78,7 @@ try:
             except Exception as e:
                 report["checks"][label] = "取得不可: " + str(e)[:100]
         # 実際の選択値はStreamlitのカスタムselectboxからも取得する。
-        for label in ("都道府県", "市区町村", "物件種別", "間取り"):
+        for label in ("都道府県", "市区町村", "物件種別", "間取り", "築年（西暦）", "面積の単位"):
             try:
                 box = page.locator('[data-testid="stSelectbox"]').filter(has_text=label).first
                 if box.count():
@@ -77,12 +89,38 @@ try:
             frame.locator("#status").inner_text()
             for frame in page.frames if frame.locator("#status").count()
         ]
+        # 実際の入力欄の値で判定。OCR成功メッセージだけでは合格にしない。
+        actual_price = number(report["checks"].get("販売価格（万円）"))
+        reference = REFERENCE_CASES.get(int(actual_price)) if actual_price is not None else None
+        if reference is None:
+            report["errors"].append("販売価格が参考スクショの1598万円/1740万円と一致しません")
+        else:
+            def expect(field, ok, observed):
+                report.setdefault("assertions", {})[field] = {
+                    "passed": bool(ok), "observed": observed
+                }
+                if not ok:
+                    report["errors"].append(field + "が不一致")
+            expect("価格", actual_price == reference["price"], actual_price)
+            for field, key in (("都道府県", "pref"), ("市区町村", "city"), ("物件種別", "type")):
+                shown = report["checks"].get(field + "_表示", "")
+                expect(field, reference[key] in shown, shown)
+            year = report["checks"].get("築年（西暦）_表示", "")
+            expect("築年", str(reference["year"]) in year, year)
+            for field, key in (("土地面積", "land"), ("建物面積", "building")):
+                value = number(report["checks"].get(field))
+                expect(field, value is not None and abs(value - reference[key]) < 0.02, value)
+            address_text = report["checks"].get("page_text", "")
+            tail = address_text.split("選択した住所：", 1)[-1][:150]
+            expect("町名", "選択した住所：" in address_text and reference["address"] in tail, tail)
         page.screenshot(path=str(output / "result.png"), full_page=True, timeout=30000)
         browser.close()
 except Exception as e:
     report["errors"].append(repr(e))
+report["verdict"] = "PASS" if not report["errors"] and len(report.get("assertions", {})) == 8 else "FAIL"
 (output / "result.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-print("\n結果:", output / "result.json")
+print("\n判定:", report["verdict"])
+print("結果:", output / "result.json")
 print("画面:", output / "result.png")
 print("取得した入力値:", json.dumps({k:v for k,v in report["checks"].items() if k!="page_text"}, ensure_ascii=False, indent=2))
 if report["errors"]:

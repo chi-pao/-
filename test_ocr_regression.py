@@ -60,29 +60,29 @@ class OCRRegressionTests(unittest.TestCase):
 
     def test_ube_1598_labeled(self):
         self.check_house(
-            "中古一戸建て\\n価格 1,598万円\\n所在地 山口県宇部市大字際波西際波台\\n"
-            "土地面積 208.84㎡\\n建物面積 114.98㎡\\n築年月 1990年11月\\n間取り 3LDK+S",
+            "中古一戸建て\n価格 1,598万円\n所在地 山口県宇部市大字際波西際波台\n"
+            "土地面積 208.84㎡\n建物面積 114.98㎡\n築年月 1990年11月\n間取り 3LDK+S",
             1598.0, "山口県宇部市大字際波西際波台", 1990, 208.84, 114.98,
         )
 
     def test_ube_1740_split_table(self):
         self.check_house(
-            "1740万円\\n山口県宇部市大字西岐波\\n土地面積\\n422㎡\\n"
-            "建物面積\\n67.9㎡\\n2014年8月\\n3LDK",
+            "1740万円\n山口県宇部市大字西岐波\n土地面積\n422㎡\n"
+            "建物面積\n67.9㎡\n2014年8月\n3LDK",
             1740.0, "山口県宇部市大字西岐波", 2014, 422.0, 67.9,
         )
 
     def test_monthly_payment_is_not_sale_price(self):
         values, _ = run_parser(
-            "月々4万円台から\\n販売価格 1,740万円\\n土地面積 422㎡\\n"
-            "建物面積 67.9㎡\\n所在地 山口県宇部市大字西岐波\\n築年月 2014年8月\\n間取り 3LDK"
+            "月々4万円台から\n販売価格 1,740万円\n土地面積 422㎡\n"
+            "建物面積 67.9㎡\n所在地 山口県宇部市大字西岐波\n築年月 2014年8月\n間取り 3LDK"
         )
         self.assertEqual(values.get("target_price"), 1740.0)
 
     def test_new_image_can_replace_previous_selection(self):
         values, _ = run_parser(
-            "価格 1598万円\\n所在地 山口県宇部市大字際波西際波台\\n"
-            "土地面積 208.84㎡\\n建物面積 114.98㎡\\n築年月 1990年11月"
+            "価格 1598万円\n所在地 山口県宇部市大字際波西際波台\n"
+            "土地面積 208.84㎡\n建物面積 114.98㎡\n築年月 1990年11月"
         )
         self.assertEqual(values.get("target_type"), "中古戸建て")
 

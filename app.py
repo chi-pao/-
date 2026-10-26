@@ -2102,9 +2102,12 @@ if _ocr_value:
             and re.search(r"(?:建物面積|延床面積)", raw)
         )
         if _is_house or re.search(r"(?:中古)?(?:一戸建て|戸建て|戸建|一軒家)", raw):
-            st.session_state["target_type"] = (
-                "新築戸建て" if re.search(r"新築(?:一戸建て|戸建て|戸建)", raw) else "中古戸建て"
+            # 関連物件や広告の「新築」に引きずられないよう、読み取れた築年を優先する。
+            _is_new_house = (
+                "築年" not in updated
+                and bool(re.search(r"新築(?:一戸建て|戸建て|戸建)", raw))
             )
+            st.session_state["target_type"] = "新築戸建て" if _is_new_house else "中古戸建て"
             updated.append("物件種別")
         else:
             m = re.search(r"(中古マンション|新築マンション|中古戸建て|新築戸建て)", raw)

@@ -89,6 +89,11 @@ try:
             frame.locator("#status").inner_text()
             for frame in page.frames if frame.locator("#status").count()
         ]
+        # OCRの生テキストも記録し、認識ミスと入力反映ミスを区別する。
+        report["checks"]["ocr_text"] = [
+            frame.locator("#preview").get_attribute("data-ocr-text")
+            for frame in page.frames if frame.locator("#preview").count()
+        ]
         # 実際の入力欄の値で判定。OCR成功メッセージだけでは合格にしない。
         actual_price = number(report["checks"].get("販売価格（万円）"))
         reference = REFERENCE_CASES.get(int(actual_price)) if actual_price is not None else None

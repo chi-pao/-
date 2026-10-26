@@ -79,6 +79,15 @@ class OCRRegressionTests(unittest.TestCase):
         )
         self.assertEqual(values.get("target_price"), 1740.0)
 
+    def test_old_house_is_not_new_because_of_related_ads(self):
+        values, _ = run_parser(
+            "価格 1598万円\n所在地 山口県宇部市大字際波西際波台\n"
+            "土地面積 208.84㎡\n建物面積 114.98㎡\n築年月 1990年11月\n"
+            "間取り 3LDK\n関連物件 新築戸建て 3280万円"
+        )
+        self.assertEqual(values.get("target_type"), "中古戸建て")
+        self.assertEqual(values.get("target_age"), 1990)
+
     def test_new_image_can_replace_previous_selection(self):
         values, _ = run_parser(
             "価格 1598万円\n所在地 山口県宇部市大字際波西際波台\n"

@@ -2015,6 +2015,30 @@ if _ocr_value:
                 st.session_state[_key] = _value
                 _found_areas[_name] = _value
                 updated.append(_name)
+        # 二列表で「土地面積 建物面積」の次行に「422㎡ 67.9㎡」と並ぶ場合。
+        if "土地面積" not in _found_areas or "建物面積" not in _found_areas:
+            for _idx, _line in enumerate(_ocr_lines):
+                _land_label = re.search(r"土地\s*面積|敷地\s*面積", _line)
+                _building_label = re.search(r"建物\s*面積|延床\s*面積", _line)
+                if not (_land_label and _building_label):
+                    continue
+                _next_values = []
+                for _next in _ocr_lines[_idx + 1:_idx + 4]:
+                    if re.search(r"所在地|住所|販売価格|物件価格|築年|間取り", _next):
+                        break
+                    _next_values.extend(float(x.replace(",", ".")) for x in re.findall(_area_num, _next, re.I))
+                _next_values = [v for v in _next_values if 10 <= v <= 10000]
+                if len(_next_values) >= 2:
+                    _ordered = [("土地面積", "house_land_area_input"), ("建物面積", "house_building_area_input")]
+                    if _building_label.start() < _land_label.start():
+                        _ordered.reverse()
+                    for (_name, _key), _value in zip(_ordered, _next_values):
+                        if _name not in _found_areas:
+                            st.session_state[_key] = _value
+                            _found_areas[_name] = _value
+                            updated.append(_name)
+                    break
+
         # OCRの面積値は㎡。以前の手入力で「坪」が選ばれていても単位を揃える。
         if _found_areas:
             st.session_state["area_unit"] = "㎡"
@@ -2054,37 +2078,36 @@ if _ocr_value:
             st.session_state["target_age"] = int(m.group(1))
             updated.append("築年")
 
-        m = re.search(r"(?:住所|所在地)[ \t:：]*([^\n\r]+)", raw)
-        if m:
-            address_text = m.group(1).strip()
-            # OCRが日本語の地名の途中に入れた空白は住所選択の妨げになるため除去。
-            address_text = re.sub(r"(?<=[一-龥ぁ-んァ-ヶ])\s+(?=[一-龥ぁ-んァ-ヶ])", "", address_text)
-            _pref_start = re.search(r"(?:北海道|東京都|京都府|大阪府|[一-龥]{2,3}県)", address_text)
-            if _pref_start:
-                address_text = address_text[_pref_start.start():]
-            # スクショの住所が2行に折り返されるケース。
+        # 住所ラベルの直後だけでなく、改行された住所にも対応。
+        # 都道府県がない文字列を「所在地」として確定しない。
+        _pref_pattern = "(?:" + "|".join(re.escape(name) for name in PREFECTURE_CODES) + ")"
+        _address_label = re.search(r"(?:住所|所在地)[ \t:：]*([^\n\r]*)", raw)
+        address_text = ""
+        if _address_label:
+            _candidates = [_address_label.group(1)] + raw[_address_label.end():].splitlines()[:3]
+            for _candidate in _candidates:
+                _pref_match = re.search(_pref_pattern, _candidate)
+                if _pref_match:
+                    address_text = _candidate[_pref_match.start():].strip()
+                    break
             if address_text.endswith(("大字", "字")):
-                rest = raw[m.end():].lstrip("\n\r ")
-                address_text += rest.splitlines()[0].strip() if rest else ""
-            if address_text:
-                st.session_state["pending_auto_address"] = address_text
-                # 同じスクショを再投入した場合も住所選択を再実行する。
-                for address_key in ("address_prefecture", "address_city", "address_district",
-                                    "_last_address_prefecture", "_last_address_city",
-                                    "_ocr_address_applied", "_ocr_city_applied", "_ocr_district_applied"):
-                    st.session_state.pop(address_key, None)
-                updated.append("所在地")
-
-        if "所在地" not in updated:
-            _address = re.search(r"(?:北海道|東京都|京都府|大阪府|.{2,3}県)[^\n]{0,55}(?:市|区|町|村)[^\n]{0,45}", raw)
+                _rest = raw[_address_label.end():].splitlines()
+                for _line in _rest:
+                    if _line.strip() and _line.strip() not in address_text:
+                        address_text += _line.strip()
+                        break
+        if not address_text:
+            _address = re.search(_pref_pattern + r"[^\n]{0,70}(?:市|区|町|村)[^\n]{0,45}", raw)
             if _address:
-                _value = _address.group().strip()
-                st.session_state["pending_auto_address"] = _value
-                for _key in ("address_prefecture", "address_city", "address_district",
-                             "_last_address_prefecture", "_last_address_city",
-                             "_ocr_address_applied", "_ocr_city_applied", "_ocr_district_applied"):
-                    st.session_state.pop(_key, None)
-                updated.append("所在地")
+                address_text = _address.group().strip()
+        if address_text:
+            address_text = re.sub(r"(?<=[一-龥ぁ-んァ-ヶ])\s+(?=[一-龥ぁ-んァ-ヶ])", "", address_text)
+            st.session_state["pending_auto_address"] = address_text
+            for _key in ("address_prefecture", "address_city", "address_district",
+                         "_last_address_prefecture", "_last_address_city",
+                         "_ocr_address_applied", "_ocr_city_applied", "_ocr_district_applied"):
+                st.session_state.pop(_key, None)
+            updated.append("所在地")
 
         # 価格のOCRでは「万円」が欠落し「1740万 円」のように分断されることがある。
         if "価格" not in updated:

@@ -2090,11 +2090,18 @@ if _ocr_value:
                 if _pref_match:
                     address_text = _candidate[_pref_match.start():].strip()
                     break
-            if address_text.endswith(("大字", "字")):
-                _rest = raw[_address_label.end():].splitlines()
+            # 「山口県宇部市」改行「大字西岐波」など町名だけの折り返し。
+            if address_text.endswith(("大字", "字")) or re.search(r"(?:市|区|町|村)$", address_text):
+                _rest = raw[_address_label.end():].splitlines()[:4]
                 for _line in _rest:
-                    if _line.strip() and _line.strip() not in address_text:
-                        address_text += _line.strip()
+                    _part = _line.strip()
+                    if not _part or _part in address_text:
+                        continue
+                    if re.match(r"^(?:大字|字)[一-龥ぁ-んァ-ヶ0-9]+$", _part):
+                        address_text += _part
+                        break
+                    if address_text.endswith(("大字", "字")) and re.fullmatch(r"[一-龥ぁ-んァ-ヶ0-9]{1,24}", _part):
+                        address_text += _part
                         break
         if not address_text:
             _address = re.search(_pref_pattern + r"[^\n]{0,70}(?:市|区|町|村)[^\n]{0,45}", raw)

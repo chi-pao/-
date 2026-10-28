@@ -2042,7 +2042,7 @@ if _ocr_value:
         # OCRがラベルを2行、値を2行に分けた表も復元する。
         # 例: 土地面積 / 建物面積 / 422㎡ / 67.9㎡
         if "土地面積" not in _found_areas or "建物面積" not in _found_areas:
-            _area_label_re = r"土地\\s*面積|敷地\\s*面積|建物\\s*面積|延床\\s*面積"
+            _area_label_re = r"土地\s*面積|敷地\s*面積|建物\s*面積|延床\s*面積"
             for _idx in range(len(_ocr_lines)):
                 _head = _ocr_lines[_idx:_idx + 3]
                 _labels = []

@@ -2069,9 +2069,10 @@ if _ocr_value:
                     for _name, _value in zip(_labels[:2], _values[:2]):
                         _key = "house_land_area_input" if _name == "土地面積" else "house_building_area_input"
                         if _name not in _found_areas:
-                            st.session_state[_key] = _value
-                            _found_areas[_name] = _value
                             updated.append(_name)
+                        # 2列の並びが判明した場合は、先の曖昧な近傍抽出を上書きする。
+                        st.session_state[_key] = _value
+                        _found_areas[_name] = _value
                     break
 
         # OCRの面積値は㎡。以前の手入力で「坪」が選ばれていても単位を揃える。

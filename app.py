@@ -2039,6 +2039,41 @@ if _ocr_value:
                             updated.append(_name)
                     break
 
+        # OCRがラベルを2行、値を2行に分けた表も復元する。
+        # 例: 土地面積 / 建物面積 / 422㎡ / 67.9㎡
+        if "土地面積" not in _found_areas or "建物面積" not in _found_areas:
+            _area_label_re = r"土地\\s*面積|敷地\\s*面積|建物\\s*面積|延床\\s*面積"
+            for _idx in range(len(_ocr_lines)):
+                _head = _ocr_lines[_idx:_idx + 3]
+                _labels = []
+                _value_start = None
+                for _offset, _line in enumerate(_head):
+                    if re.search(_area_num, _line, re.I):
+                        _value_start = _idx + _offset
+                        break
+                    for _label_match in re.finditer(_area_label_re, _line):
+                        _labels.append("土地面積" if re.search(r"土地|敷地", _label_match.group()) else "建物面積")
+                if len(_labels) < 2 or len(set(_labels)) != 2:
+                    continue
+                if _value_start is None:
+                    _value_start = _idx + len(_head)
+                _values = []
+                for _line in _ocr_lines[_value_start:_value_start + 3]:
+                    if re.search(r"所在地|住所|価格|築年|間取り", _line):
+                        break
+                    _values.extend(
+                        float(x.replace(",", ".")) for x in re.findall(_area_num, _line, re.I)
+                    )
+                _values = [x for x in _values if 10 <= x <= 10000]
+                if len(_values) >= 2:
+                    for _name, _value in zip(_labels[:2], _values[:2]):
+                        _key = "house_land_area_input" if _name == "土地面積" else "house_building_area_input"
+                        if _name not in _found_areas:
+                            st.session_state[_key] = _value
+                            _found_areas[_name] = _value
+                            updated.append(_name)
+                    break
+
         # OCRの面積値は㎡。以前の手入力で「坪」が選ばれていても単位を揃える。
         if _found_areas:
             st.session_state["area_unit"] = "㎡"
@@ -2678,11 +2713,16 @@ with st.container(border=True):
     district_names = sorted({x for x in district_names if x})
 
     if pending_address and st.session_state.get("_ocr_district_applied") != pending_address:
-        for district_name in district_names:
-            if district_name and district_name in pending_address:
-                st.session_state["address_district"] = district_name
-                st.session_state["_ocr_district_applied"] = pending_address
-                break
+        # 短い町名が長い町名に含まれる場合は、最も具体的な一致を採用する。
+        _district_matches = [
+            name for name in district_names
+            if name and (_normalize_town_key(name) in _normalize_town_key(pending_address))
+        ]
+        if _district_matches:
+            st.session_state["address_district"] = max(
+                _district_matches, key=lambda name: len(_normalize_town_key(name))
+            )
+            st.session_state["_ocr_district_applied"] = pending_address
 
     # 町名は五十音の行ボタンと前後のページ送りだけで選択する。
     # 選択した町名は address_district に保存し、既存の査定処理に渡す。

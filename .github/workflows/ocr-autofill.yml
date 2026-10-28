@@ -1,0 +1,23 @@
+name: OCR autofill regression
+on:
+  push:
+    paths:
+      - app.py
+      - tests/test_ocr_autofill.py
+      - .github/workflows/ocr-autofill.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ocr-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check Python syntax
+        run: python -m py_compile app.py
+      - name: Test actual OCR parser against reference text
+        run: python -m unittest discover -s tests -p test_ocr_autofill.py -v

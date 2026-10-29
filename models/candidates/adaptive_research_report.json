@@ -21,7 +21,7 @@
   },
   "status": "completed",
   "data_signature": "774a69823505cf76286b96cf2c6172934519852a6127bfd1a92c5c09f20707cb",
-  "started_at": "2026-10-29T08:29:21.650239",
+  "started_at": "2026-10-29T12:48:22.252997",
   "training_n": 220416,
   "validation_years": [
     2022,
@@ -857,18 +857,904 @@
         }
       ],
       "status": "ok"
+    },
+    {
+      "round": 3,
+      "name": "round3_1",
+      "hypothesis": "compare without station walking minutes",
+      "spec": [
+        "round3_1",
+        [
+          "PriceCategory",
+          "StationMinutes"
+        ],
+        377,
+        1000,
+        40,
+        25.11932,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0,
+          "extra_features": [
+            "LandShape",
+            "Frontage"
+          ]
+        }
+      ],
+      "started_at": "2026-10-29T12:49:25.743094",
+      "temporal_cv": {
+        "n": 100476,
+        "mae_man_yen": 679.29,
+        "median_ape_pct": 29.15,
+        "within20_pct": 36.2,
+        "p90_ape_pct": 98.31,
+        "bias_pct": -4.68
+      },
+      "folds": [
+        {
+          "year": 2022,
+          "n": 49785,
+          "mae_man_yen": 713.23,
+          "median_ape_pct": 30.61,
+          "within20_pct": 34.27,
+          "p90_ape_pct": 98.31,
+          "bias_pct": -5.76
+        },
+        {
+          "year": 2023,
+          "n": 50691,
+          "mae_man_yen": 645.95,
+          "median_ape_pct": 27.8,
+          "within20_pct": 38.09,
+          "p90_ape_pct": 98.3,
+          "bias_pct": -3.69
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "round": 3,
+      "name": "round3_2",
+      "hypothesis": "experiment zoning limits",
+      "spec": [
+        "round3_2",
+        [
+          "PriceCategory"
+        ],
+        377,
+        1000,
+        40,
+        25.11932,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0,
+          "extra_features": [
+            "CoverageRatio",
+            "FloorAreaRatio"
+          ]
+        }
+      ],
+      "started_at": "2026-10-29T12:50:01.355705",
+      "temporal_cv": {
+        "n": 100476,
+        "mae_man_yen": 727.99,
+        "median_ape_pct": 31.45,
+        "within20_pct": 33.64,
+        "p90_ape_pct": 113.17,
+        "bias_pct": -3.84
+      },
+      "folds": [
+        {
+          "year": 2022,
+          "n": 49785,
+          "mae_man_yen": 743.93,
+          "median_ape_pct": 32.38,
+          "within20_pct": 32.41,
+          "p90_ape_pct": 113.77,
+          "bias_pct": -4.36
+        },
+        {
+          "year": 2023,
+          "n": 50691,
+          "mae_man_yen": 712.33,
+          "median_ape_pct": 30.54,
+          "within20_pct": 34.85,
+          "p90_ape_pct": 112.52,
+          "bias_pct": -3.41
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "round": 3,
+      "name": "round3_3",
+      "hypothesis": "remove feature group: age",
+      "spec": [
+        "round3_3",
+        [
+          "BuildingAge",
+          "PriceCategory"
+        ],
+        377,
+        1000,
+        40,
+        25.11932,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0,
+          "extra_features": [
+            "LandShape",
+            "Frontage"
+          ]
+        }
+      ],
+      "started_at": "2026-10-29T12:50:33.618898",
+      "temporal_cv": {
+        "n": 100476,
+        "mae_man_yen": 863.55,
+        "median_ape_pct": 39.24,
+        "within20_pct": 26.1,
+        "p90_ape_pct": 154.54,
+        "bias_pct": -6.12
+      },
+      "folds": [
+        {
+          "year": 2022,
+          "n": 49785,
+          "mae_man_yen": 896.41,
+          "median_ape_pct": 40.65,
+          "within20_pct": 24.67,
+          "p90_ape_pct": 154.38,
+          "bias_pct": -8.61
+        },
+        {
+          "year": 2023,
+          "n": 50691,
+          "mae_man_yen": 831.27,
+          "median_ape_pct": 37.66,
+          "within20_pct": 27.51,
+          "p90_ape_pct": 154.81,
+          "bias_pct": -3.93
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "round": 3,
+      "name": "round3_4",
+      "hypothesis": "model capacity mutation",
+      "spec": [
+        "round3_4",
+        [
+          "PriceCategory"
+        ],
+        271,
+        930,
+        47,
+        25.11932,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0,
+          "extra_features": [
+            "LandShape",
+            "Frontage"
+          ]
+        }
+      ],
+      "started_at": "2026-10-29T12:51:09.550826",
+      "temporal_cv": {
+        "n": 100476,
+        "mae_man_yen": 664.26,
+        "median_ape_pct": 28.55,
+        "within20_pct": 37.01,
+        "p90_ape_pct": 98.42,
+        "bias_pct": -4.3
+      },
+      "folds": [
+        {
+          "year": 2022,
+          "n": 49785,
+          "mae_man_yen": 697.47,
+          "median_ape_pct": 29.98,
+          "within20_pct": 35.06,
+          "p90_ape_pct": 97.81,
+          "bias_pct": -5.57
+        },
+        {
+          "year": 2023,
+          "n": 50691,
+          "mae_man_yen": 631.64,
+          "median_ape_pct": 27.13,
+          "within20_pct": 38.93,
+          "p90_ape_pct": 98.94,
+          "bias_pct": -3.15
+        }
+      ],
+      "status": "ok",
+      "new_champion": true
+    },
+    {
+      "round": 3,
+      "name": "round3_5",
+      "hypothesis": "model capacity mutation",
+      "spec": [
+        "round3_5",
+        [
+          "PriceCategory"
+        ],
+        489,
+        1080,
+        35,
+        25.11932,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0,
+          "extra_features": [
+            "LandShape",
+            "Frontage"
+          ]
+        }
+      ],
+      "started_at": "2026-10-29T12:52:03.101451",
+      "temporal_cv": {
+        "n": 100476,
+        "mae_man_yen": 664.48,
+        "median_ape_pct": 28.61,
+        "within20_pct": 36.93,
+        "p90_ape_pct": 97.75,
+        "bias_pct": -4.58
+      },
+      "folds": [
+        {
+          "year": 2022,
+          "n": 49785,
+          "mae_man_yen": 699.0,
+          "median_ape_pct": 30.06,
+          "within20_pct": 35.02,
+          "p90_ape_pct": 97.51,
+          "bias_pct": -5.78
+        },
+        {
+          "year": 2023,
+          "n": 50691,
+          "mae_man_yen": 630.57,
+          "median_ape_pct": 27.19,
+          "within20_pct": 38.81,
+          "p90_ape_pct": 97.95,
+          "bias_pct": -3.57
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "round": 3,
+      "name": "round3_6",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round3_6",
+        [
+          "PriceCategory"
+        ],
+        377,
+        1000,
+        40,
+        42.66946,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0,
+          "extra_features": [
+            "LandShape",
+            "Frontage"
+          ]
+        }
+      ],
+      "started_at": "2026-10-29T12:52:44.515137",
+      "temporal_cv": {
+        "n": 100476,
+        "mae_man_yen": 666.45,
+        "median_ape_pct": 28.55,
+        "within20_pct": 36.84,
+        "p90_ape_pct": 97.23,
+        "bias_pct": -4.73
+      },
+      "folds": [
+        {
+          "year": 2022,
+          "n": 49785,
+          "mae_man_yen": 699.64,
+          "median_ape_pct": 30.02,
+          "within20_pct": 34.97,
+          "p90_ape_pct": 97.48,
+          "bias_pct": -5.7
+        },
+        {
+          "year": 2023,
+          "n": 50691,
+          "mae_man_yen": 633.86,
+          "median_ape_pct": 27.15,
+          "within20_pct": 38.68,
+          "p90_ape_pct": 96.9,
+          "bias_pct": -3.83
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "round": 3,
+      "name": "round3_7",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round3_7",
+        [
+          "PriceCategory"
+        ],
+        377,
+        1000,
+        40,
+        9.00872,
+        0.0261,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0,
+          "extra_features": [
+            "LandShape",
+            "Frontage"
+          ]
+        }
+      ],
+      "started_at": "2026-10-29T12:53:18.461921",
+      "temporal_cv": {
+        "n": 100476,
+        "mae_man_yen": 663.84,
+        "median_ape_pct": 28.62,
+        "within20_pct": 36.87,
+        "p90_ape_pct": 98.8,
+        "bias_pct": -4.6
+      },
+      "folds": [
+        {
+          "year": 2022,
+          "n": 49785,
+          "mae_man_yen": 697.58,
+          "median_ape_pct": 30.1,
+          "within20_pct": 34.96,
+          "p90_ape_pct": 99.13,
+          "bias_pct": -5.67
+        },
+        {
+          "year": 2023,
+          "n": 50691,
+          "mae_man_yen": 630.71,
+          "median_ape_pct": 27.14,
+          "within20_pct": 38.76,
+          "p90_ape_pct": 98.56,
+          "bias_pct": -3.74
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "round": 3,
+      "name": "round3_8",
+      "hypothesis": "learning-rate and trees mutation",
+      "spec": [
+        "round3_8",
+        [
+          "PriceCategory"
+        ],
+        377,
+        1341,
+        40,
+        25.11932,
+        0.01945,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0,
+          "extra_features": [
+            "LandShape",
+            "Frontage"
+          ]
+        }
+      ],
+      "started_at": "2026-10-29T12:53:55.368307",
+      "temporal_cv": {
+        "n": 100476,
+        "mae_man_yen": 663.13,
+        "median_ape_pct": 28.5,
+        "within20_pct": 37.02,
+        "p90_ape_pct": 97.87,
+        "bias_pct": -4.5
+      },
+      "folds": [
+        {
+          "year": 2022,
+          "n": 49785,
+          "mae_man_yen": 697.79,
+          "median_ape_pct": 30.0,
+          "within20_pct": 35.09,
+          "p90_ape_pct": 97.18,
+          "bias_pct": -5.76
+        },
+        {
+          "year": 2023,
+          "n": 50691,
+          "mae_man_yen": 629.09,
+          "median_ape_pct": 27.07,
+          "within20_pct": 38.93,
+          "p90_ape_pct": 98.49,
+          "bias_pct": -3.35
+        }
+      ],
+      "status": "ok",
+      "new_champion": true
+    },
+    {
+      "round": 4,
+      "name": "round4_1",
+      "hypothesis": "compare without station walking minutes",
+      "spec": [
+        "round4_1",
+        [
+          "PriceCategory",
+          "StationMinutes"
+        ],
+        377,
+        1341,
+        40,
+        25.11932,
+        0.01945,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0,
+          "extra_features": [
+            "LandShape",
+            "Frontage"
+          ]
+        }
+      ],
+      "started_at": "2026-10-29T12:55:22.030085",
+      "temporal_cv": {
+        "n": 100476,
+        "mae_man_yen": 677.84,
+        "median_ape_pct": 29.04,
+        "within20_pct": 36.3,
+        "p90_ape_pct": 99.13,
+        "bias_pct": -4.47
+      },
+      "folds": [
+        {
+          "year": 2022,
+          "n": 49785,
+          "mae_man_yen": 712.21,
+          "median_ape_pct": 30.51,
+          "within20_pct": 34.45,
+          "p90_ape_pct": 97.93,
+          "bias_pct": -5.74
+        },
+        {
+          "year": 2023,
+          "n": 50691,
+          "mae_man_yen": 644.09,
+          "median_ape_pct": 27.64,
+          "within20_pct": 38.11,
+          "p90_ape_pct": 100.57,
+          "bias_pct": -3.3
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "round": 4,
+      "name": "round4_2",
+      "hypothesis": "experiment renovation proxy",
+      "spec": [
+        "round4_2",
+        [
+          "PriceCategory"
+        ],
+        377,
+        1341,
+        40,
+        25.11932,
+        0.01945,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0,
+          "extra_features": [
+            "Renovation"
+          ]
+        }
+      ],
+      "started_at": "2026-10-29T12:56:10.070266",
+      "temporal_cv": {
+        "n": 100476,
+        "mae_man_yen": 668.21,
+        "median_ape_pct": 28.78,
+        "within20_pct": 36.73,
+        "p90_ape_pct": 99.64,
+        "bias_pct": -4.4
+      },
+      "folds": [
+        {
+          "year": 2022,
+          "n": 49785,
+          "mae_man_yen": 699.56,
+          "median_ape_pct": 30.12,
+          "within20_pct": 34.92,
+          "p90_ape_pct": 99.71,
+          "bias_pct": -5.42
+        },
+        {
+          "year": 2023,
+          "n": 50691,
+          "mae_man_yen": 637.43,
+          "median_ape_pct": 27.51,
+          "within20_pct": 38.51,
+          "p90_ape_pct": 99.61,
+          "bias_pct": -3.53
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "round": 4,
+      "name": "round4_3",
+      "hypothesis": "remove feature group: age",
+      "spec": [
+        "round4_3",
+        [
+          "BuildingAge",
+          "PriceCategory"
+        ],
+        377,
+        1341,
+        40,
+        25.11932,
+        0.01945,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0,
+          "extra_features": [
+            "LandShape",
+            "Frontage"
+          ]
+        }
+      ],
+      "started_at": "2026-10-29T12:56:57.387186",
+      "temporal_cv": {
+        "n": 100476,
+        "mae_man_yen": 862.69,
+        "median_ape_pct": 39.17,
+        "within20_pct": 26.12,
+        "p90_ape_pct": 154.42,
+        "bias_pct": -6.11
+      },
+      "folds": [
+        {
+          "year": 2022,
+          "n": 49785,
+          "mae_man_yen": 897.43,
+          "median_ape_pct": 40.7,
+          "within20_pct": 24.62,
+          "p90_ape_pct": 151.58,
+          "bias_pct": -9.22
+        },
+        {
+          "year": 2023,
+          "n": 50691,
+          "mae_man_yen": 828.57,
+          "median_ape_pct": 37.6,
+          "within20_pct": 27.6,
+          "p90_ape_pct": 156.83,
+          "bias_pct": -3.25
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "round": 4,
+      "name": "round4_4",
+      "hypothesis": "model capacity mutation",
+      "spec": [
+        "round4_4",
+        [
+          "PriceCategory"
+        ],
+        260,
+        1247,
+        48,
+        25.11932,
+        0.01945,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0,
+          "extra_features": [
+            "LandShape",
+            "Frontage"
+          ]
+        }
+      ],
+      "started_at": "2026-10-29T12:57:47.207685",
+      "temporal_cv": {
+        "n": 100476,
+        "mae_man_yen": 662.93,
+        "median_ape_pct": 28.47,
+        "within20_pct": 37.03,
+        "p90_ape_pct": 98.78,
+        "bias_pct": -4.17
+      },
+      "folds": [
+        {
+          "year": 2022,
+          "n": 49785,
+          "mae_man_yen": 697.13,
+          "median_ape_pct": 29.9,
+          "within20_pct": 35.05,
+          "p90_ape_pct": 98.5,
+          "bias_pct": -5.26
+        },
+        {
+          "year": 2023,
+          "n": 50691,
+          "mae_man_yen": 629.34,
+          "median_ape_pct": 27.16,
+          "within20_pct": 38.98,
+          "p90_ape_pct": 99.16,
+          "bias_pct": -3.15
+        }
+      ],
+      "status": "ok",
+      "new_champion": true
+    },
+    {
+      "round": 4,
+      "name": "round4_5",
+      "hypothesis": "model capacity mutation",
+      "spec": [
+        "round4_5",
+        [
+          "PriceCategory"
+        ],
+        511,
+        1400,
+        31,
+        25.11932,
+        0.01945,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0,
+          "extra_features": [
+            "LandShape",
+            "Frontage"
+          ]
+        }
+      ],
+      "started_at": "2026-10-29T12:59:00.973070",
+      "temporal_cv": {
+        "n": 100476,
+        "mae_man_yen": 663.62,
+        "median_ape_pct": 28.58,
+        "within20_pct": 36.89,
+        "p90_ape_pct": 97.26,
+        "bias_pct": -4.68
+      },
+      "folds": [
+        {
+          "year": 2022,
+          "n": 49785,
+          "mae_man_yen": 698.03,
+          "median_ape_pct": 30.0,
+          "within20_pct": 34.98,
+          "p90_ape_pct": 97.69,
+          "bias_pct": -5.74
+        },
+        {
+          "year": 2023,
+          "n": 50691,
+          "mae_man_yen": 629.83,
+          "median_ape_pct": 27.08,
+          "within20_pct": 38.76,
+          "p90_ape_pct": 96.65,
+          "bias_pct": -3.78
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "round": 4,
+      "name": "round4_6",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round4_6",
+        [
+          "PriceCategory"
+        ],
+        377,
+        1341,
+        40,
+        52.24079,
+        0.01945,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0,
+          "extra_features": [
+            "LandShape",
+            "Frontage"
+          ]
+        }
+      ],
+      "started_at": "2026-10-29T12:59:59.890159",
+      "temporal_cv": {
+        "n": 100476,
+        "mae_man_yen": 665.52,
+        "median_ape_pct": 28.55,
+        "within20_pct": 37.02,
+        "p90_ape_pct": 98.12,
+        "bias_pct": -4.32
+      },
+      "folds": [
+        {
+          "year": 2022,
+          "n": 49785,
+          "mae_man_yen": 700.91,
+          "median_ape_pct": 30.09,
+          "within20_pct": 35.03,
+          "p90_ape_pct": 97.4,
+          "bias_pct": -5.69
+        },
+        {
+          "year": 2023,
+          "n": 50691,
+          "mae_man_yen": 630.76,
+          "median_ape_pct": 27.08,
+          "within20_pct": 38.96,
+          "p90_ape_pct": 98.75,
+          "bias_pct": -3.15
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "round": 4,
+      "name": "round4_7",
+      "hypothesis": "regularization mutation",
+      "spec": [
+        "round4_7",
+        [
+          "PriceCategory"
+        ],
+        377,
+        1341,
+        40,
+        10.31869,
+        0.01945,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0,
+          "extra_features": [
+            "LandShape",
+            "Frontage"
+          ]
+        }
+      ],
+      "started_at": "2026-10-29T13:00:46.674451",
+      "temporal_cv": {
+        "n": 100476,
+        "mae_man_yen": 663.42,
+        "median_ape_pct": 28.57,
+        "within20_pct": 36.88,
+        "p90_ape_pct": 98.16,
+        "bias_pct": -4.53
+      },
+      "folds": [
+        {
+          "year": 2022,
+          "n": 49785,
+          "mae_man_yen": 696.99,
+          "median_ape_pct": 30.03,
+          "within20_pct": 34.95,
+          "p90_ape_pct": 98.18,
+          "bias_pct": -5.35
+        },
+        {
+          "year": 2023,
+          "n": 50691,
+          "mae_man_yen": 630.44,
+          "median_ape_pct": 27.1,
+          "within20_pct": 38.78,
+          "p90_ape_pct": 98.14,
+          "bias_pct": -3.73
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "round": 4,
+      "name": "round4_8",
+      "hypothesis": "learning-rate and trees mutation",
+      "spec": [
+        "round4_8",
+        [
+          "PriceCategory"
+        ],
+        377,
+        1400,
+        40,
+        25.11932,
+        0.01481,
+        {
+          "native_categories": true,
+          "objective": "regression_l1",
+          "half_life": 2.0,
+          "extra_features": [
+            "LandShape",
+            "Frontage"
+          ]
+        }
+      ],
+      "started_at": "2026-10-29T13:01:36.658087",
+      "temporal_cv": {
+        "n": 100476,
+        "mae_man_yen": 664.81,
+        "median_ape_pct": 28.52,
+        "within20_pct": 36.97,
+        "p90_ape_pct": 98.46,
+        "bias_pct": -4.43
+      },
+      "folds": [
+        {
+          "year": 2022,
+          "n": 49785,
+          "mae_man_yen": 697.94,
+          "median_ape_pct": 29.94,
+          "within20_pct": 35.18,
+          "p90_ape_pct": 99.54,
+          "bias_pct": -5.16
+        },
+        {
+          "year": 2023,
+          "n": 50691,
+          "mae_man_yen": 632.27,
+          "median_ape_pct": 27.11,
+          "within20_pct": 38.72,
+          "p90_ape_pct": 97.33,
+          "bias_pct": -3.81
+        }
+      ],
+      "status": "ok"
     }
   ],
   "champion_spec": [
-    "round2_1",
+    "round4_4",
     [
       "PriceCategory"
     ],
-    377,
-    1000,
-    40,
+    260,
+    1247,
+    48,
     25.11932,
-    0.0261,
+    0.01945,
     {
       "native_categories": true,
       "objective": "regression_l1",
@@ -881,131 +1767,13 @@
   ],
   "starting_cv": {
     "n": 100476,
-    "mae_man_yen": 668.9,
-    "median_ape_pct": 28.75,
-    "within20_pct": 36.74,
-    "p90_ape_pct": 99.72,
-    "bias_pct": -4.42
-  },
-  "starting_cv_folds": [
-    {
-      "year": 2022,
-      "n": 49785,
-      "mae_man_yen": 699.57,
-      "median_ape_pct": 30.0,
-      "within20_pct": 34.97,
-      "p90_ape_pct": 99.14,
-      "bias_pct": -5.48
-    },
-    {
-      "year": 2023,
-      "n": 50691,
-      "mae_man_yen": 638.78,
-      "median_ape_pct": 27.5,
-      "within20_pct": 38.48,
-      "p90_ape_pct": 100.21,
-      "bias_pct": -3.4
-    }
-  ],
-  "starting_spec": [
-    "round2_5",
-    [
-      "PriceCategory"
-    ],
-    377,
-    1000,
-    40,
-    25.11932,
-    0.0261,
-    {
-      "native_categories": true,
-      "objective": "regression_l1",
-      "half_life": 2.0
-    }
-  ],
-  "diagnostics": [
-    {
-      "feature": "BuildingAge",
-      "segment": "(47.0, 77.0]",
-      "count": 9629,
-      "median_ape_pct": 40.734
-    },
-    {
-      "feature": "Prefecture",
-      "segment": "秋田県",
-      "count": 374,
-      "median_ape_pct": 38.337
-    },
-    {
-      "feature": "Prefecture",
-      "segment": "新潟県",
-      "count": 828,
-      "median_ape_pct": 38.287
-    },
-    {
-      "feature": "Area",
-      "segment": "(290.0, 1900.0]",
-      "count": 9795,
-      "median_ape_pct": 37.451
-    },
-    {
-      "feature": "Prefecture",
-      "segment": "山口県",
-      "count": 621,
-      "median_ape_pct": 37.373
-    },
-    {
-      "feature": "BuildingAge",
-      "segment": "(37.0, 47.0]",
-      "count": 10372,
-      "median_ape_pct": 36.574
-    },
-    {
-      "feature": "Structure",
-      "segment": "不明",
-      "count": 716,
-      "median_ape_pct": 35.312
-    },
-    {
-      "feature": "Structure",
-      "segment": "RC",
-      "count": 734,
-      "median_ape_pct": 34.926
-    },
-    {
-      "feature": "BuildingAge",
-      "segment": "(27.0, 37.0]",
-      "count": 10081,
-      "median_ape_pct": 34.528
-    },
-    {
-      "feature": "Structure",
-      "segment": "RC、木造",
-      "count": 160,
-      "median_ape_pct": 33.017
-    },
-    {
-      "feature": "Area",
-      "segment": "(200.0, 290.0]",
-      "count": 9869,
-      "median_ape_pct": 29.803
-    },
-    {
-      "feature": "StationMinutes",
-      "segment": "(0.999, 8.0]",
-      "count": 7905,
-      "median_ape_pct": 27.196
-    }
-  ],
-  "best_cv": {
-    "n": 100476,
     "mae_man_yen": 665.26,
     "median_ape_pct": 28.58,
     "within20_pct": 36.88,
     "p90_ape_pct": 97.34,
     "bias_pct": -4.77
   },
-  "best_cv_folds": [
+  "starting_cv_folds": [
     {
       "year": 2022,
       "n": 49785,
@@ -1025,17 +1793,139 @@
       "bias_pct": -3.9
     }
   ],
-  "updated_at": "2026-10-29T08:42:01.182403",
+  "starting_spec": [
+    "round2_1",
+    [
+      "PriceCategory"
+    ],
+    377,
+    1000,
+    40,
+    25.11932,
+    0.0261,
+    {
+      "native_categories": true,
+      "objective": "regression_l1",
+      "half_life": 2.0,
+      "extra_features": [
+        "LandShape",
+        "Frontage"
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "feature": "BuildingAge",
+      "segment": "(47.0, 77.0]",
+      "count": 9629,
+      "median_ape_pct": 40.22
+    },
+    {
+      "feature": "Prefecture",
+      "segment": "山口県",
+      "count": 621,
+      "median_ape_pct": 38.864
+    },
+    {
+      "feature": "Prefecture",
+      "segment": "島根県",
+      "count": 212,
+      "median_ape_pct": 38.133
+    },
+    {
+      "feature": "Prefecture",
+      "segment": "新潟県",
+      "count": 828,
+      "median_ape_pct": 37.829
+    },
+    {
+      "feature": "Area",
+      "segment": "(290.0, 1900.0]",
+      "count": 9795,
+      "median_ape_pct": 37.29
+    },
+    {
+      "feature": "BuildingAge",
+      "segment": "(37.0, 47.0]",
+      "count": 10372,
+      "median_ape_pct": 35.761
+    },
+    {
+      "feature": "Structure",
+      "segment": "RC",
+      "count": 734,
+      "median_ape_pct": 35.489
+    },
+    {
+      "feature": "Structure",
+      "segment": "不明",
+      "count": 716,
+      "median_ape_pct": 34.624
+    },
+    {
+      "feature": "BuildingAge",
+      "segment": "(27.0, 37.0]",
+      "count": 10081,
+      "median_ape_pct": 34.046
+    },
+    {
+      "feature": "Structure",
+      "segment": "RC、木造",
+      "count": 160,
+      "median_ape_pct": 31.004
+    },
+    {
+      "feature": "Area",
+      "segment": "(200.0, 290.0]",
+      "count": 9869,
+      "median_ape_pct": 29.214
+    },
+    {
+      "feature": "StationMinutes",
+      "segment": "(0.999, 8.0]",
+      "count": 7905,
+      "median_ape_pct": 26.452
+    }
+  ],
+  "best_cv": {
+    "n": 100476,
+    "mae_man_yen": 662.93,
+    "median_ape_pct": 28.47,
+    "within20_pct": 37.03,
+    "p90_ape_pct": 98.78,
+    "bias_pct": -4.17
+  },
+  "best_cv_folds": [
+    {
+      "year": 2022,
+      "n": 49785,
+      "mae_man_yen": 697.13,
+      "median_ape_pct": 29.9,
+      "within20_pct": 35.05,
+      "p90_ape_pct": 98.5,
+      "bias_pct": -5.26
+    },
+    {
+      "year": 2023,
+      "n": 50691,
+      "mae_man_yen": 629.34,
+      "median_ape_pct": 27.16,
+      "within20_pct": 38.98,
+      "p90_ape_pct": 99.16,
+      "bias_pct": -3.15
+    }
+  ],
+  "updated_at": "2026-10-29T13:02:28.243221",
   "latest_validation_fold": {
     "year": 2023,
     "n": 50691,
-    "mae_man_yen": 631.85,
+    "mae_man_yen": 629.34,
     "median_ape_pct": 27.16,
-    "within20_pct": 38.71,
-    "p90_ape_pct": 97.15,
-    "bias_pct": -3.9
+    "within20_pct": 38.98,
+    "p90_ape_pct": 99.16,
+    "bias_pct": -3.15
   },
-  "completed_at": "2026-10-29T08:42:01.184806",
+  "completed_at": "2026-10-29T13:02:28.245412",
   "candidate_only": true,
   "internal_cv_confirmation": {
     "method": "rolling-origin-confirmation-v1",
@@ -1050,19 +1940,19 @@
         "rows": 53505,
         "baseline": {
           "n": 53505,
-          "mae_man_yen": 628.98,
-          "median_ape_pct": 25.82,
-          "within20_pct": 40.6,
-          "p90_ape_pct": 98.25,
-          "bias_pct": -2.24
-        },
-        "challenger": {
-          "n": 53505,
           "mae_man_yen": 620.69,
           "median_ape_pct": 25.63,
           "within20_pct": 40.7,
           "p90_ape_pct": 95.86,
           "bias_pct": -2.58
+        },
+        "challenger": {
+          "n": 53505,
+          "mae_man_yen": 623.05,
+          "median_ape_pct": 25.72,
+          "within20_pct": 40.77,
+          "p90_ape_pct": 96.85,
+          "bias_pct": -2.25
         }
       },
       {
@@ -1070,19 +1960,19 @@
         "rows": 53659,
         "baseline": {
           "n": 53659,
-          "mae_man_yen": 641.99,
-          "median_ape_pct": 26.26,
-          "within20_pct": 40.03,
-          "p90_ape_pct": 97.81,
-          "bias_pct": -3.5
-        },
-        "challenger": {
-          "n": 53659,
           "mae_man_yen": 633.42,
           "median_ape_pct": 26.05,
           "within20_pct": 40.41,
           "p90_ape_pct": 96.47,
           "bias_pct": -3.5
+        },
+        "challenger": {
+          "n": 53659,
+          "mae_man_yen": 630.86,
+          "median_ape_pct": 25.93,
+          "within20_pct": 40.47,
+          "p90_ape_pct": 98.45,
+          "bias_pct": -2.94
         }
       }
     ],

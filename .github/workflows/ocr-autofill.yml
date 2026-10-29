@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - app.py
+      - auto_test.py
       - tests/test_ocr_autofill.py
       - .github/workflows/ocr-autofill.yml
   workflow_dispatch:
@@ -18,6 +19,6 @@ jobs:
         with:
           python-version: '3.11'
       - name: Check Python syntax
-        run: python -m py_compile app.py
+        run: python -m py_compile app.py auto_test.py
       - name: Test actual OCR parser against reference text
         run: python -m unittest discover -s tests -p test_ocr_autofill.py -v

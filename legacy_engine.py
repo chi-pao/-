@@ -8,7 +8,7 @@ from sklearn.dummy import DummyRegressor
 from sklearn.metrics import mean_absolute_error
 from sklearn.ensemble import HistGradientBoostingRegressor
 
-JCOL={'種類':'Type','価格情報区分':'PriceCategory','都道府県名':'Prefecture','市区町村名':'Municipality','市区町村コード':'MunicipalityCode','地区名':'DistrictName','最寄駅：名称':'NearestStation','最寄駅：距離（分）':'StationMinutes','取引価格（総額）':'TradePrice','面積（㎡）':'Area','延床面積（㎡）':'TotalFloorArea','建築年':'BuildingYear','建物の構造':'Structure','都市計画':'CityPlanning','取引時期':'Period','用途':'Use'}
+JCOL={'種類':'Type','価格情報区分':'PriceCategory','都道府県名':'Prefecture','市区町村名':'Municipality','市区町村コード':'MunicipalityCode','地区名':'DistrictName','最寄駅：名称':'NearestStation','最寄駅：距離（分）':'StationMinutes','取引価格（総額）':'TradePrice','面積（㎡）':'Area','延床面積（㎡）':'TotalFloorArea','建築年':'BuildingYear','建物の構造':'Structure','都市計画':'CityPlanning','取引時期':'Period','用途':'Use','土地の形状':'LandShape','間口':'Frontage','前面道路：方位':'Direction','前面道路：種類':'Classification','前面道路：幅員':'Breadth','建ぺい率':'CoverageRatio','容積率':'FloorAreaRatio','改装':'Renovation'}
 NUM=['Area','TotalFloorArea','Age','StationMinutes','Year','Quarter']
 CAT=['Prefecture','MunicipalityCode','DistrictName','Structure','CityPlanning','Use']
 

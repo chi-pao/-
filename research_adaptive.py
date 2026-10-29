@@ -335,11 +335,6 @@ def propose(champion, diagnostics, experiments, round_no, seed=42):
         ('recent training transactions, two-year half-life', {'half_life': 2.0}),
         ('native categories with robust loss and recency',
          {'native_categories': True, 'objective': 'regression_l1', 'half_life': 2.0}),
-        ('road access fields', {'extra_features': ['Breadth', 'Direction', 'Classification']}),
-        ('lot shape and frontage', {'extra_features': ['LandShape', 'Frontage']}),
-        ('zoning limits', {'extra_features': ['CoverageRatio', 'FloorAreaRatio']}),
-        ('renovation proxy', {'extra_features': ['Renovation']}),
-        ('road and lot fields', {'extra_features': ['Breadth', 'Direction', 'Classification', 'LandShape', 'Frontage']}),
     ]
     for reason, changes in method_tests:
         settings = {**options, **changes}
@@ -351,7 +346,17 @@ def propose(champion, diagnostics, experiments, round_no, seed=42):
         add('use available station walking minutes', [x for x in excluded if x != 'StationMinutes'], leaves, trees, child, reg, lr)
     else:
         add('compare without station walking minutes', list(excluded)+['StationMinutes'], leaves, trees, child, reg, lr)
-    for group in priority[:3]:
+    experimental_hypotheses = [
+        ('experiment road access fields', ['Breadth', 'Direction', 'Classification']),
+        ('experiment lot shape and frontage', ['LandShape', 'Frontage']),
+        ('experiment zoning limits', ['CoverageRatio', 'FloorAreaRatio']),
+        ('experiment renovation proxy', ['Renovation']),
+    ]
+    reason, fields = experimental_hypotheses[(round_no - 1) % len(experimental_hypotheses)]
+    settings = {**options, 'extra_features': fields}
+    if settings != options:
+        add(reason, excluded, leaves, trees, child, reg, lr, settings)
+    for group in priority[:1]:
         columns = FEATURE_GROUPS[group]
         if all(x in excluded for x in columns):
             ex = [x for x in excluded if x not in columns]

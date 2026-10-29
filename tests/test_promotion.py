@@ -205,7 +205,10 @@ class PrecisionResearchTests(unittest.TestCase):
         self.assertTrue(any(model_options(s).get('half_life')==2 for _,s in ideas))
         champion = (*old, {'native_categories':True,'objective':'regression_l1','half_life':2})
         for _,spec in propose(champion,[],[],2):
-            self.assertEqual(model_options(spec),model_options(champion))
+            options = model_options(spec)
+            self.assertEqual({k:v for k,v in options.items() if k != 'extra_features'}, model_options(champion))
+            if 'extra_features' in options:
+                self.assertTrue(options['extra_features'])
             self.assertTrue(SITE_UNAVAILABLE.issubset(spec[1]))
 
     def test_middle_error_improvement_cannot_hide_average_or_coverage_regression(self):

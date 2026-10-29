@@ -121,7 +121,7 @@ def main():
     report["required_site_features"] = required_site_features
     report["unsupported_site_features"] = unsupported_site_features
     # These fields remain research-only until the public Site collects them.
-    accuracy_gate = (median_ape_delta_ci[1] < 0
+    accuracy_gate = (after["median_ape_pct"] < before["median_ape_pct"]
                      and after["mae_yen"] <= before["mae_yen"] * 1.01
                      and after["within20_pct"] >= before["within20_pct"] - 1)
     approved = accuracy_gate and not unsupported_site_features

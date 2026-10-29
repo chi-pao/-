@@ -41,6 +41,7 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_mlit_data.py' -v
           python -m unittest discover -s tests -p 'test_promotion.py' -v
+          python -m unittest discover -s tests -p 'test_cv_promotion.py' -v
       - name: Run broader repository regressions
         continue-on-error: true
         run: python -m unittest discover -s tests -p 'test_*.py' -v

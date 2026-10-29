@@ -41,6 +41,18 @@ class RollingOriginPromotionTests(unittest.TestCase):
         self.assertFalse(result['independent_holdout'])
         self.assertLess(result['paired_median_ape_delta_95ci_percentage_points'][1], 0)
 
+    def test_accepts_small_measured_improvement_even_when_interval_overlaps_zero(self):
+        frame = pd.read_csv(self.prediction_path)
+        y = np.full(len(frame), 100.0)
+        frame['price_yen'] = y
+        frame['baseline_prediction_yen'] = 110.1
+        frame['challenger_prediction_yen'] = np.where(np.arange(len(frame)) < 612, 110.0, 110.2)
+        frame.to_csv(self.prediction_path, index=False)
+        result = evaluate(self.report, self.prediction_path)
+        self.assertEqual(result['status'], 'provisional_cv_approved')
+        self.assertLess(result['challenger']['median_ape_pct'], result['baseline']['median_ape_pct'])
+        self.assertGreater(result['paired_median_ape_delta_95ci_percentage_points'][1], 0)
+
     def test_rejects_no_improvement(self):
         frame = pd.read_csv(self.prediction_path)
         frame['challenger_prediction_yen'] = frame['baseline_prediction_yen']

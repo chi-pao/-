@@ -299,6 +299,18 @@ class AvailableStationTests(unittest.TestCase):
 
 
 
+class SitesExportPromotionThresholdTests(unittest.TestCase):
+    def test_any_measured_median_improvement_passes_export_guardrails(self):
+        from export_sites_model import improves
+        before={'median_ape_pct':26.05,'mae_yen':6_350_000,'within20_pct':40.3}
+        after={'median_ape_pct':25.84,'mae_yen':6_270_000,'within20_pct':40.5}
+        self.assertTrue(improves(before,after))
+        tiny={'median_ape_pct':26.049,'mae_yen':6_350_000,'within20_pct':40.3}
+        self.assertTrue(improves(before,tiny))
+        worse={'median_ape_pct':26.049,'mae_yen':6_500_000,'within20_pct':40.3}
+        self.assertFalse(improves(before,worse))
+
+
 class PairedAccuracyGateTests(unittest.TestCase):
     def test_adopts_a_reliable_improvement_smaller_than_half_a_point(self):
         import promote_used_house

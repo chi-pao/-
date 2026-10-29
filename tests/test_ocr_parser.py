@@ -32,7 +32,8 @@ class OCRParserTests(unittest.TestCase):
         fake = FakeStreamlit()
         payload = json.dumps({"text": ocr_text, "nonce": 1}, ensure_ascii=False)
         env = {"st": fake, "json": json, "re": re, "unicodedata": unicodedata,
-               "datetime": datetime.datetime, "_ocr_widget": lambda **kwargs: payload}
+               "datetime": datetime.datetime, "PREFECTURE_CODES": {"山口県": "35", "東京都": "13"},
+               "_ocr_widget": lambda **kwargs: payload}
         exec(self.parser_code, env)
         return fake.session_state
 

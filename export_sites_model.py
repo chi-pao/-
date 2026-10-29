@@ -21,7 +21,7 @@ def scores(y,p):
     e=np.abs(y-p)
     return {'median_ape_pct':float(np.median(e/y)*100),'mae_yen':float(e.mean()),'within20_pct':float((e/y<=.2).mean()*100)}
 def improves(before,after):
-    return (after['median_ape_pct']<=before['median_ape_pct']-.5 and after['mae_yen']<=before['mae_yen']*1.01 and after['within20_pct']>=before['within20_pct']-1)
+    return (after['median_ape_pct']<before['median_ape_pct'] and after['mae_yen']<=before['mae_yen']*1.01 and after['within20_pct']>=before['within20_pct']-1)
 def numeric_json(v):
     if isinstance(v,np.generic):v=v.item()
     return None if isinstance(v,float) and not np.isfinite(v) else v

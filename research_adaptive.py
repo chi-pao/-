@@ -451,7 +451,7 @@ def run(args):
         except (ValueError,OSError): pass
     champion=(champion[0],sorted(set(champion[1]) | SITE_UNAVAILABLE),*champion[2:])
     coverage = {c: round(float((data[c].notna() & (data[c].astype(str) != '不明')).mean() * 100), 2) if c in data else 0.0 for c in EXPERIMENTAL_FEATURES}
-    report={'version':'adaptive-6','scope':DATA_POLICY,'validation_method':validation_method,'site_unavailable_features':sorted(SITE_UNAVAILABLE),'experimental_feature_coverage_pct':coverage,'status':'running','data_signature':signature,'started_at':datetime.now().isoformat(),
+    report={'version':'adaptive-6','scope':DATA_POLICY,'validation_method':validation_method,'site_unavailable_features':sorted(SITE_UNAVAILABLE),'experimental_feature_coverage_pct':coverage,'experimental_feature_notes':{'Renovation':'Limited transaction-data renovation proxy; not a full building-condition assessment.','Road and lot fields':'Research-only inputs; not collected by the current public Site.'},'status':'running','data_signature':signature,'started_at':datetime.now().isoformat(),
         'training_n':len(data),'validation_years':list(validation_years),
         'mlit_holdout_metadata':json.loads(metadata_path.read_text(encoding='utf-8')) if metadata_path.is_file() else None,
         'warning':'The newest fetched MLIT quarter is excluded from fitting and reserved for model comparison; earlier quarters join training and rolling validation.',

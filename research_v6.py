@@ -39,6 +39,11 @@ def prepare(raw):
     x['LogArea'] = np.log1p(a.where(a > 0))
     x['LogTotalFloorArea'] = np.log1p(f.where(f > 0))
     x['LandBuildingRatio'] = a / f.where(f > 0)
+    # Preserve optional MLIT fields for a separate experimental feature track.
+    for name in ['Frontage', 'Breadth', 'CoverageRatio', 'FloorAreaRatio']:
+        x[name] = pd.to_numeric(raw[name], errors='coerce') if name in raw else np.nan
+    for name in ['LandShape', 'Direction', 'Classification', 'Renovation']:
+        x[name] = raw[name].fillna('不明').astype(str) if name in raw else '不明'
     x['price_man'] = pd.to_numeric(raw['price'], errors='coerce')
     x = x.loc[x['price_man'].between(100, 30000) & x['Area'].between(20, 2000)].copy()
     return x.reset_index(drop=True)

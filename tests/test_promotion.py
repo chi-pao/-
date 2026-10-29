@@ -86,6 +86,18 @@ class PromotionSafetyTests(unittest.TestCase):
         manifest=json.loads((self.root/'models/candidates/approved_used_house.json').read_text())
         self.assertEqual(manifest['evaluation']['independence']['method'],'audited_unused_rows')
 
+    def test_candidate_requiring_fields_absent_from_site_is_blocked(self):
+        item = joblib.load(self.challenger)
+        item['required_site_features'] = ['Breadth', 'Renovation']
+        item['site_available_features'] = ['Area']
+        joblib.dump(item, self.challenger)
+        result = self.run_promotion()
+        self.assertNotEqual(result.returncode, 0)
+        report = json.loads(result.stdout)
+        self.assertEqual(report['status'], 'blocked_site_inputs')
+        self.assertEqual(report['unsupported_site_features'], ['Breadth', 'Renovation'])
+        self.assertFalse((self.root / "models" / "candidates" / "approved_used_house.joblib").exists())
+
     def test_worse_model_never_replaces_incumbent(self):
         joblib.dump(bundle(14000000), self.challenger)
         result = self.run_promotion()

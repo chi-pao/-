@@ -39,6 +39,7 @@ def parse(text):
         "re": re,
         "unicodedata": unicodedata,
         "datetime": datetime.datetime,
+        "PREFECTURE_CODES": {"山口県": "35", "東京都": "13"},
     }
     exec(ocr_block, env)
     return st.session_state, st.messages

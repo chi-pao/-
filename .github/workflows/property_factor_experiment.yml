@@ -1,0 +1,57 @@
+name: Isolated property factor experiment
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - codex/property-factor-experiment-20261029
+    paths:
+      - 'research_adaptive.py'
+      - 'research_v6.py'
+      - 'legacy_engine.py'
+      - 'promote_used_house.py'
+      - 'promote_used_house_cv.py'
+      - 'tests/test_mlit_data.py'
+      - 'tests/test_promotion.py'
+      - '.github/workflows/property_factor_experiment.yml'
+permissions:
+  contents: read
+concurrency:
+  group: property-factor-experiment
+  cancel-in-progress: false
+jobs:
+  experiment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Check syntax and focused model/data safeguards
+        run: |
+          python -m py_compile research_adaptive.py research_v6.py legacy_engine.py promote_used_house.py promote_used_house_cv.py
+          python -m unittest discover -s tests -p 'test_mlit_data.py' -v
+          python -m unittest discover -s tests -p 'test_promotion.py' -v
+      - name: Restore historical transactions and candidate baseline
+        shell: bash
+        run: |
+          mkdir -p data models/candidates
+          RELEASE_URL="https://github.com/chi-pao/-/releases/download/ai-training-data-v1"
+          curl --fail --location --retry 3 --max-time 300 "$RELEASE_URL/All_20214_20254.zip" -o data/All_20214_20254.zip
+          curl --fail --location --retry 3 --max-time 300 "$RELEASE_URL/v7_used_house_candidate.joblib" -o models/candidates/v7_used_house_candidate.joblib
+          python -c "import zipfile; assert zipfile.is_zipfile('data/All_20214_20254.zip')"
+          python -c "from pathlib import Path; assert Path('models/candidates/v7_used_house_candidate.joblib').stat().st_size > 1000000"
+      - name: Run rotating factor experiments
+        run: python research_adaptive.py --site . --rounds 4 --restart
+      - name: Preserve candidate evidence without promoting it
+        uses: actions/upload-artifact@v4
+        with:
+          name: property-factor-experiment
+          path: |
+            models/candidates/adaptive_research_report.json
+            models/candidates/adaptive_used_house_candidate.joblib
+            data/rolling_origin_confirmation.csv
+          retention-days: 30
+          if-no-files-found: error

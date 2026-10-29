@@ -23,7 +23,8 @@ def parse(text):
     st = SimpleNamespace(session_state={}, success=lambda *_: None, warning=lambda *_: None)
     namespace = {
         "st": st, "json": json, "re": re, "unicodedata": unicodedata,
-        "datetime": datetime, "_ocr_value": json.dumps({"text": text, "nonce": 1}),
+        "datetime": datetime, "PREFECTURE_CODES": {"山口県": "35", "東京都": "13"},
+        "_ocr_value": json.dumps({"text": text, "nonce": 1}),
     }
     exec(ocr_code, namespace)
     return st.session_state

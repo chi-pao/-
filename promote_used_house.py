@@ -116,11 +116,18 @@ def main():
               "paired_median_ape_delta_95ci_percentage_points": [round(x, 4) for x in median_ape_delta_ci],
               "input_policy": "site-residential-used-house-v2", "status": "rejected",
               "independence": evidence, "candidate_sha256": sha(args.challenger)}
-    # Accept any reliable median-APE improvement, without a fixed 0.5-point hurdle,
-    # while preventing material regressions in yen error and 20% coverage.
-    approved = (median_ape_delta_ci[1] < 0
-                and after["mae_yen"] <= before["mae_yen"] * 1.01
-                and after["within20_pct"] >= before["within20_pct"] - 1)
+    required_site_features = challenger.get("required_site_features", [])
+    unsupported_site_features = sorted(set(required_site_features) - set(challenger.get("site_available_features", [])))
+    report["required_site_features"] = required_site_features
+    report["unsupported_site_features"] = unsupported_site_features
+    # These fields remain research-only until the public Site collects them.
+    accuracy_gate = (median_ape_delta_ci[1] < 0
+                     and after["mae_yen"] <= before["mae_yen"] * 1.01
+                     and after["within20_pct"] >= before["within20_pct"] - 1)
+    approved = accuracy_gate and not unsupported_site_features
+    if accuracy_gate and unsupported_site_features:
+        report["status"] = "blocked_site_inputs"
+        report["promotion_note"] = "Accuracy improved, but required fields are not collected by the live Site."
     if approved:
         target_dir = args.site / "models" / "candidates"
         target_dir.mkdir(parents=True, exist_ok=True)

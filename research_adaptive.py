@@ -18,8 +18,12 @@ from sklearn.preprocessing import OrdinalEncoder
 from lightgbm import LGBMRegressor
 
 # Match the fields and property scope actually available in the Sites checker.
-DATA_POLICY = 'site-residential-used-house-v2'
+DATA_POLICY = 'site-residential-used-house-v3-land-road-fields'
 SITE_UNAVAILABLE = {'PriceCategory'}
+EXPERIMENTAL_NUMS = ['Frontage', 'Breadth', 'CoverageRatio', 'FloorAreaRatio']
+EXPERIMENTAL_CATS = ['LandShape', 'Direction', 'Classification', 'Renovation']
+EXPERIMENTAL_FEATURES = EXPERIMENTAL_NUMS + EXPERIMENTAL_CATS
+SITE_AVAILABLE = set(FEATURES) - SITE_UNAVAILABLE
 
 def normalize_city_codes(values):
     text = values.fillna('').astype(str).str.normalize('NFKC').str.strip()
@@ -94,7 +98,13 @@ def metric(frame, p):
 def input_frame(frame, excluded):
     x = frame.copy()
     for c in set(excluded) | SITE_UNAVAILABLE:
-        x[c] = '不明' if c in CATS else np.nan
+        x[c] = '不明' if c in CATS or c in EXPERIMENTAL_CATS else np.nan
+    for c in EXPERIMENTAL_CATS:
+        if c not in x: x[c] = '不明'
+        x[c] = x[c].fillna('不明').astype(str)
+    for c in EXPERIMENTAL_NUMS:
+        if c not in x: x[c] = np.nan
+        x[c] = pd.to_numeric(x[c], errors='coerce')
     return x
 
 def temporal_cv(data, spec, years=(2022, 2023, 2024), min_rows=1000):
@@ -178,8 +188,9 @@ def model_factory(spec):
     _, excluded, leaves, iters, min_child, regularization, lr = spec[:7]
     options = model_options(spec)
     excluded = set(excluded) | SITE_UNAVAILABLE
-    cats = [x for x in CATS if x not in excluded]
-    nums = [x for x in NUMS if x not in excluded]
+    requested = [x for x in options.get('extra_features', []) if x in EXPERIMENTAL_FEATURES]
+    cats = [x for x in CATS if x not in excluded] + [x for x in requested if x in EXPERIMENTAL_CATS]
+    nums = [x for x in NUMS if x not in excluded] + [x for x in requested if x in EXPERIMENTAL_NUMS]
     pre = ColumnTransformer([
         ('num', Pipeline([('fill', SimpleImputer(strategy='constant',fill_value=-1))]), nums),
         ('cat', Pipeline([('fill',SimpleImputer(strategy='constant',fill_value='不明')),
@@ -199,11 +210,16 @@ def fit(frame, spec):
         transformers = m.named_steps['pre'].transformers
         n_numeric = len(transformers[0][2])
         fit_args['lgb__categorical_feature'] = list(range(n_numeric, n_numeric + len(transformers[1][2])))
-    m.fit(input_frame(frame,spec[1])[FEATURES], np.log(frame.price_man.to_numpy(dtype=float)), **fit_args)
+    extra = [x for x in model_options(spec).get('extra_features', []) if x in EXPERIMENTAL_FEATURES]
+    columns = FEATURES + [x for x in extra if x not in FEATURES]
+    m.fit(input_frame(frame,spec[1])[columns], np.log(frame.price_man.to_numpy(dtype=float)), **fit_args)
     return m
 
 def pred(model, frame, excluded):
-    v = model.predict(input_frame(frame,excluded)[FEATURES])
+    x = input_frame(frame,excluded)
+    for c in getattr(model, 'feature_names_in_', FEATURES):
+        if c not in x: x[c] = '不明' if c in CATS or c in EXPERIMENTAL_CATS else np.nan
+    v = model.predict(x[list(model.feature_names_in_)])
     return np.clip(np.exp(np.clip(v,-10,15)),50,100000)
 
 class V8Pipeline:
@@ -213,8 +229,8 @@ class V8Pipeline:
         self.regional=regional or {}; self.regional_weight=regional_weight
     def predict(self, frame):
         x=frame.copy()
-        for c in FEATURES:
-            if c not in x: x[c] = '不明' if c in CATS else np.nan
+        for c in getattr(self.model, 'feature_names_in_', FEATURES):
+            if c not in x: x[c] = '不明' if c in CATS or c in EXPERIMENTAL_CATS else np.nan
         for c in CATS: x[c]=x[c].fillna('不明').astype(str)
         if getattr(self,'city_codes_padded',False):
             x['MunicipalityCode'] = normalize_city_codes(x['MunicipalityCode'])
@@ -268,10 +284,16 @@ FEATURE_GROUPS = {
     'structure': ['Structure'], 'planning': ['CityPlanning'],
     'floor': ['TotalFloorArea', 'LogTotalFloorArea', 'LandBuildingRatio'],
     'land': ['Area', 'LogArea', 'LandBuildingRatio'],
+    'road_access': ['Breadth', 'Direction', 'Classification'],
+    'lot_shape': ['LandShape', 'Frontage'],
+    'zoning_limits': ['CoverageRatio', 'FloorAreaRatio'],
+    'renovation_proxy': ['Renovation'],
 }
 FEATURE_HINTS = {'StationMinutes': 'station', 'DistrictName': 'district',
                  'MunicipalityCode': 'city', 'BuildingAge': 'age',
-                 'Structure': 'structure', 'Area': 'land'}
+                 'Structure': 'structure', 'Area': 'land',
+                 'Breadth': 'road_access', 'LandShape': 'lot_shape',
+                 'Renovation': 'renovation_proxy'}
 
 def propose(champion, diagnostics, experiments, round_no, seed=42):
     """Feedback-directed, reproducible hypothesis generator, not a fixed experiment list.
@@ -324,7 +346,17 @@ def propose(champion, diagnostics, experiments, round_no, seed=42):
         add('use available station walking minutes', [x for x in excluded if x != 'StationMinutes'], leaves, trees, child, reg, lr)
     else:
         add('compare without station walking minutes', list(excluded)+['StationMinutes'], leaves, trees, child, reg, lr)
-    for group in priority[:3]:
+    experimental_hypotheses = [
+        ('experiment road access fields', ['Breadth', 'Direction', 'Classification']),
+        ('experiment lot shape and frontage', ['LandShape', 'Frontage']),
+        ('experiment zoning limits', ['CoverageRatio', 'FloorAreaRatio']),
+        ('experiment renovation proxy', ['Renovation']),
+    ]
+    reason, fields = experimental_hypotheses[(round_no - 1) % len(experimental_hypotheses)]
+    settings = {**options, 'extra_features': fields}
+    if settings != options:
+        add(reason, excluded, leaves, trees, child, reg, lr, settings)
+    for group in priority[:1]:
         columns = FEATURE_GROUPS[group]
         if all(x in excluded for x in columns):
             ex = [x for x in excluded if x not in columns]
@@ -378,7 +410,7 @@ def run(args):
                 for chunk in iter(lambda: stream.read(1024*1024), b''):
                     digest.update(chunk)
             fingerprints.append(digest.hexdigest())
-    validation_method='rolling-origin-selection-reserved-confirmation-years-excluding-latest-mlit-quarter-v2'
+    validation_method='rolling-origin-selection-reserved-confirmation-years-excluding-latest-mlit-quarter-v3-feature-experiments'
     signature=hashlib.sha256((DATA_POLICY+'|'+validation_method+'|'+'|'.join(fingerprints)).encode()).hexdigest()
     raw=load_training_rows(h,root,args.quick)
     data=prepare_site_training(raw)
@@ -418,7 +450,8 @@ def run(args):
                 print('Data or validation policy changed; restarting experiments from the prior champion',flush=True)
         except (ValueError,OSError): pass
     champion=(champion[0],sorted(set(champion[1]) | SITE_UNAVAILABLE),*champion[2:])
-    report={'version':'adaptive-5','scope':DATA_POLICY,'validation_method':validation_method,'site_unavailable_features':sorted(SITE_UNAVAILABLE),'status':'running','data_signature':signature,'started_at':datetime.now().isoformat(),
+    coverage = {c: round(float((data[c].notna() & (data[c].astype(str) != '不明')).mean() * 100), 2) if c in data else 0.0 for c in EXPERIMENTAL_FEATURES}
+    report={'version':'adaptive-6','scope':DATA_POLICY,'validation_method':validation_method,'site_unavailable_features':sorted(SITE_UNAVAILABLE),'experimental_feature_coverage_pct':coverage,'experimental_feature_notes':{'Renovation':'Limited transaction-data renovation proxy; not a full building-condition assessment.','Road and lot fields':'Research-only inputs; not collected by the current public Site.'},'status':'running','data_signature':signature,'started_at':datetime.now().isoformat(),
         'training_n':len(data),'validation_years':list(validation_years),
         'mlit_holdout_metadata':json.loads(metadata_path.read_text(encoding='utf-8')) if metadata_path.is_file() else None,
         'warning':'The newest fetched MLIT quarter is excluded from fitting and reserved for model comparison; earlier quarters join training and rolling validation.',
@@ -473,11 +506,13 @@ def run(args):
         final=fit(full,champion)
         end_year=int(pd.to_numeric(full.TransactionYear,errors='coerce').max())
         end_quarter=int(pd.to_numeric(full.loc[full.TransactionYear.eq(end_year),'Quarter'],errors='coerce').max())
-        bundle={'pipeline':V8Pipeline(final,champion[1]),'feature_columns':FEATURES,
+        experimental = [x for x in model_options(champion).get('extra_features', []) if x in EXPERIMENTAL_FEATURES]
+        bundle={'pipeline':V8Pipeline(final,champion[1]),'feature_columns':list(final.feature_names_in_),
+                'required_site_features':experimental,
                 'model_key':'used_house','target_unit':'yen','training_end_year':end_year,
                 'training_end_quarter':end_quarter,'candidate_only':True,
                 'categorical_features':CATS,'data_policy':DATA_POLICY,
-                'site_available_features':(['StationMinutes'] if 'StationMinutes' not in champion[1] else []),
+                'site_available_features':sorted(SITE_AVAILABLE),
                 'display_name':'Feedback-driven adaptive research candidate (not approved)', 'validation_report':report}
         target=out/'adaptive_used_house_candidate.joblib';tmp=out/'adaptive_used_house_candidate.tmp.joblib'
         try:

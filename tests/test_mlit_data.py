@@ -22,6 +22,28 @@ class MlitNormalizationTests(unittest.TestCase):
         self.assertEqual(row.Age, 26)
         self.assertEqual(row.price, 2500)
 
+    def test_official_road_and_land_fields_are_normalized_conservatively(self):
+        frame = pd.DataFrame([{
+            "Type": "宅地(土地と建物)", "TradePrice": 25000000, "Area": 120,
+            "TotalFloorArea": 90, "BuildingYear": "2000年", "Year": 2026,
+            "Quarter": 2, "Prefecture": "埼玉県", "MunicipalityCode": "11201",
+            "Use": "住宅", "Breadth": "4.5", "Frontage": "8",
+            "CoverageRatio": "60", "FloorAreaRatio": "200",
+            "LandShape": "ほぼ長方形", "Direction": "北",
+            "Classification": "市道", "Renovation": "改装済",
+        }, {
+            "Type": "宅地(土地と建物)", "TradePrice": 25000000, "Area": 120,
+            "TotalFloorArea": 90, "BuildingYear": "2000年", "Year": 2026,
+            "Quarter": 2, "Prefecture": "埼玉県", "MunicipalityCode": "11201",
+            "Use": "住宅", "Breadth": "4m以上", "Frontage": "不明",
+        }])
+        rows = normalize(frame)
+        self.assertEqual(rows.iloc[0].Breadth, 4.5)
+        self.assertEqual(rows.iloc[0].CoverageRatio, 60)
+        self.assertEqual(rows.iloc[0].LandShape, "ほぼ長方形")
+        self.assertTrue(pd.isna(rows.iloc[1].Breadth))
+        self.assertTrue(pd.isna(rows.iloc[1].Frontage))
+
     def test_holdout_is_only_the_newest_quarter(self):
         import tempfile
         from pathlib import Path

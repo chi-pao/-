@@ -86,6 +86,18 @@ class PromotionSafetyTests(unittest.TestCase):
         manifest=json.loads((self.root/'models/candidates/approved_used_house.json').read_text())
         self.assertEqual(manifest['evaluation']['independence']['method'],'audited_unused_rows')
 
+    def test_candidate_requiring_fields_absent_from_site_is_blocked(self):
+        item = joblib.load(self.challenger)
+        item['required_site_features'] = ['Breadth', 'Renovation']
+        item['site_available_features'] = ['Area']
+        joblib.dump(item, self.challenger)
+        result = self.run_promotion()
+        self.assertNotEqual(result.returncode, 0)
+        report = json.loads(result.stdout)
+        self.assertEqual(report['status'], 'blocked_site_inputs')
+        self.assertEqual(report['unsupported_site_features'], ['Breadth', 'Renovation'])
+        self.assertFalse((self.root / "models" / "candidates" / "approved_used_house.joblib").exists())
+
     def test_worse_model_never_replaces_incumbent(self):
         joblib.dump(bundle(14000000), self.challenger)
         result = self.run_promotion()
@@ -193,7 +205,10 @@ class PrecisionResearchTests(unittest.TestCase):
         self.assertTrue(any(model_options(s).get('half_life')==2 for _,s in ideas))
         champion = (*old, {'native_categories':True,'objective':'regression_l1','half_life':2})
         for _,spec in propose(champion,[],[],2):
-            self.assertEqual(model_options(spec),model_options(champion))
+            options = model_options(spec)
+            self.assertEqual({k:v for k,v in options.items() if k != 'extra_features'}, model_options(champion))
+            if 'extra_features' in options:
+                self.assertTrue(options['extra_features'])
             self.assertTrue(SITE_UNAVAILABLE.issubset(spec[1]))
 
     def test_middle_error_improvement_cannot_hide_average_or_coverage_regression(self):

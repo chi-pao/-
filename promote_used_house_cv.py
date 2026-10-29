@@ -106,6 +106,14 @@ def promote(candidate_path, report_path, prediction_path, site, min_rows=1000):
     if evaluation['status'] != 'provisional_cv_approved':
         return evaluation
     candidate = joblib.load(candidate_path)
+    required = candidate.get('required_site_features', [])
+    unsupported = sorted(set(required) - set(candidate.get('site_available_features', [])))
+    evaluation['required_site_features'] = required
+    evaluation['unsupported_site_features'] = unsupported
+    if unsupported:
+        evaluation['status'] = 'blocked_site_inputs'
+        evaluation['promotion_note'] = 'Candidate requires fields not collected by the public Site.'
+        return evaluation
     if (not isinstance(candidate, dict) or candidate.get('model_key') != 'used_house'
             or candidate.get('target_unit') != 'yen' or not hasattr(candidate.get('pipeline'), 'predict')):
         raise ValueError('Unsupported challenger model bundle')

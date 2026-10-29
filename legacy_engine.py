@@ -8,7 +8,7 @@ from sklearn.dummy import DummyRegressor
 from sklearn.metrics import mean_absolute_error
 from sklearn.ensemble import HistGradientBoostingRegressor
 
-JCOL={'種類':'Type','価格情報区分':'PriceCategory','都道府県名':'Prefecture','市区町村名':'Municipality','市区町村コード':'MunicipalityCode','地区名':'DistrictName','最寄駅：名称':'NearestStation','最寄駅：距離（分）':'StationMinutes','取引価格（総額）':'TradePrice','面積（㎡）':'Area','延床面積（㎡）':'TotalFloorArea','建築年':'BuildingYear','建物の構造':'Structure','都市計画':'CityPlanning','取引時期':'Period','用途':'Use'}
+JCOL={'種類':'Type','価格情報区分':'PriceCategory','都道府県名':'Prefecture','市区町村名':'Municipality','市区町村コード':'MunicipalityCode','地区名':'DistrictName','最寄駅：名称':'NearestStation','最寄駅：距離（分）':'StationMinutes','取引価格（総額）':'TradePrice','面積（㎡）':'Area','延床面積（㎡）':'TotalFloorArea','建築年':'BuildingYear','建物の構造':'Structure','都市計画':'CityPlanning','取引時期':'Period','用途':'Use','土地の形状':'LandShape','間口':'Frontage','前面道路：方位':'Direction','前面道路：種類':'Classification','前面道路：幅員':'Breadth','建ぺい率':'CoverageRatio','容積率':'FloorAreaRatio','改装':'Renovation'}
 NUM=['Area','TotalFloorArea','Age','StationMinutes','Year','Quarter']
 CAT=['Prefecture','MunicipalityCode','DistrictName','Structure','CityPlanning','Use']
 
@@ -24,9 +24,12 @@ def normalize(df):
     df=df.rename(columns=JCOL)
     if 'Type' not in df: return pd.DataFrame()
     df=df[df.Type.eq('宅地(土地と建物)')].copy()
-    for c in ['TradePrice','Area','TotalFloorArea','StationMinutes']:
+    for c in ['TradePrice','Area','TotalFloorArea','StationMinutes','Frontage','Breadth','CoverageRatio','FloorAreaRatio']:
         if c not in df: df[c]=np.nan
-        df[c]=pd.to_numeric(df[c],errors='coerce')
+        # Keep only exact numeric values; ranges and labels are treated as missing.
+        normalized=df[c].astype(str).str.normalize('NFKC').str.strip()
+        exact=normalized.str.fullmatch(r'[+-]?\d+(?:\.\d+)?')
+        df[c]=pd.to_numeric(normalized.where(exact),errors='coerce')
     period = df['Period'].astype(str) if 'Period' in df else pd.Series('', index=df.index, dtype=object)
     period_year = pd.to_numeric(period.str.extract(r'(20\d{2})')[0], errors='coerce')
     period_quarter = pd.to_numeric(period.str.extract(r'第\s*([1-4１-４])')[0].replace({'１':'1','２':'2','３':'3','４':'4'}), errors='coerce')
@@ -35,9 +38,9 @@ def normalize(df):
     # Missing construction year is genuinely missing, not a zero-year-old building.
     built=pd.to_numeric(df.get('BuildingYear',pd.Series(index=df.index,dtype=object)).astype(str).str.extract(r'(19\d{2}|20\d{2})')[0],errors='coerce')
     df['Age']=(df['Year']-built).where(built.le(df['Year']))
-    for c in CAT:
+    for c in CAT + ['LandShape','Direction','Classification','Renovation']:
         if c not in df: df[c]='不明'
-        df[c]=df[c].fillna('不明').astype(str).str.strip().replace({'':'不明','nan':'不明'})
+        df[c]=df[c].fillna('不明').astype(str).str.normalize('NFKC').str.strip().replace({'':'不明','nan':'不明'})
     if 'PriceCategory' not in df: df['PriceCategory']='不明'
     df['PriceCategory']=df['PriceCategory'].fillna('不明').astype(str)
     df['price']=df.TradePrice/10000

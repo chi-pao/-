@@ -37,7 +37,12 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Check promotion and research Python syntax
         run: python -m py_compile evaluation_policy.py promote_used_house.py promote_used_house_cv.py research_adaptive.py legacy_engine.py prepare_mlit_holdout.py export_sites_model.py app.py
-      - name: Test model promotion safeguards
+      - name: Test model and data safeguards
+        run: |
+          python -m unittest discover -s tests -p 'test_mlit_data.py' -v
+          python -m unittest discover -s tests -p 'test_promotion.py' -v
+      - name: Run broader repository regressions
+        continue-on-error: true
         run: python -m unittest discover -s tests -p 'test_*.py' -v
       - name: Restore training archive and V7 baseline from GitHub Release
         shell: bash

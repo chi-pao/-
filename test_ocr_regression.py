@@ -34,11 +34,23 @@ def run_parser(text):
     ]
     if len(candidates) != 1:
         raise AssertionError("OCR処理ブロックが見つかりません（または複数あります）")
+    # app.py の OCR 処理が参照する都道府県辞書も実コードから抽出する。
+    # これが無いと住所抽出で NameError となり、回帰テスト自体が失敗する。
+    prefecture_nodes = [
+        node for node in module.body
+        if isinstance(node, ast.Assign)
+        and any(isinstance(target, ast.Name) and target.id == "PREFECTURE_CODES"
+                for target in node.targets)
+    ]
+    if len(prefecture_nodes) != 1:
+        raise AssertionError("都道府県辞書 PREFECTURE_CODES が見つかりません")
+    prefecture_codes = ast.literal_eval(prefecture_nodes[0].value)
     st = FakeStreamlit()
     payload = json.dumps({"text": text, "nonce": 1}, ensure_ascii=False)
     scope = {
         "st": st, "_ocr_value": payload, "json": json, "re": re,
         "unicodedata": unicodedata, "datetime": datetime,
+        "PREFECTURE_CODES": prefecture_codes,
     }
     block = ast.Module(body=[candidates[0]], type_ignores=[])
     ast.fix_missing_locations(block)

@@ -3114,7 +3114,14 @@ evaluate_button = st.button(
     use_container_width=True,
 )
 
+# 結果の中の入力欄（鑑定方式の参考評価など）を操作するとStreamlitは全体を再実行し、
+# ボタンはFalseに戻る。以前はここで査定結果と広告がすべて消えていた。
+# 一度査定したら、表示を保ったまま現在の入力で描き直す。
 if evaluate_button:
+    st.session_state["evaluation_requested"] = True
+show_evaluation = evaluate_button or st.session_state.get("evaluation_requested", False)
+
+if show_evaluation:
     # 全国の売買6分類・賃貸3分類をすべて処理可能にする。
     # 未学習の分類は下のモデル読み込み時に正しく案内する。
     if get_model_key(target_type) is None:
@@ -3146,7 +3153,9 @@ if evaluate_button:
             st.warning("建物面積を入力してください。")
             st.stop()
 
-    register_usage_event("property_evaluation")
+    if evaluate_button:
+        # 利用回数はボタンを押したときだけ数える（描き直しでは数えない）。
+        register_usage_event("property_evaluation")
 
     try:
         with st.spinner("AIが参考価格を計算しています..."):

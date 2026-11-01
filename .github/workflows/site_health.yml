@@ -24,6 +24,12 @@ jobs:
             fi
             if [ "$attempt" -lt 3 ]; then sleep 15; fi
           done
+          echo "--- Diagnose: follow Streamlit's sign-in redirect with a cookie jar (what a browser does)"
+          curl -sS -L --max-redirs 10 -c /tmp/jar -b /tmp/jar -o /tmp/follow.txt -D /tmp/follow-headers.txt \
+            -w 'final_url=%{url_effective} final_code=%{http_code} redirects=%{num_redirects}\n' \
+            --connect-timeout 15 --max-time 60 "$URL" || true
+          grep -iE '^(HTTP/|location:)' /tmp/follow-headers.txt | sed -E 's/(state|code|token)=[^&]*/\1=***/g' || true
+          echo "--- body (first 300 bytes)"; head -c 300 /tmp/follow.txt | tr -d '\r'; echo
           echo "::error::Streamlit health check failed (HTTP $code)."
           if [ -f /tmp/site-headers.txt ]; then
             grep -i '^location:' /tmp/site-headers.txt || true

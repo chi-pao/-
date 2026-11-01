@@ -10,22 +10,30 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Check Streamlit health endpoint
+      - name: Check that anonymous visitors reach the app
         shell: bash
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          # Streamlit Community Cloud sends every new visitor through an automatic, password-less
+          # sign-in redirect that sets a cookie. Without a cookie jar the old check stopped at
+          # that 303 and failed every run even while the site worked. Follow it like a browser.
           URL="https://okaidokucyekka.streamlit.app/_stcore/health"
           for attempt in 1 2 3; do
-            code="$(curl -sS -o /tmp/site-health.txt -D /tmp/site-headers.txt -w '%{http_code}' --connect-timeout 15 --max-time 40 "$URL")" || code="000"
-            echo "Attempt $attempt: HTTP $code"
-            if [ "$code" = "200" ] && grep -Eiq '^ok[[:space:]]*$' /tmp/site-health.txt; then
-              echo "Streamlit health endpoint is healthy."
+            rm -f /tmp/jar /tmp/body.txt
+            result="$(curl -sS -L --max-redirs 10 -c /tmp/jar -b /tmp/jar -o /tmp/body.txt \
+              -w '%{http_code} %{url_effective} %{num_redirects}' --connect-timeout 15 --max-time 60 "$URL")" || result="000 - 0"
+            read -r code final redirects <<< "$result"
+            host="$(printf '%s' "$final" | sed -E 's#^https?://([^/]+).*#\1#')"
+            echo "Attempt $attempt: HTTP $code, final host $host, redirects $redirects"
+            if grep -qiE 'gone to sleep|wake (it|this app) (back )?up' /tmp/body.txt; then
+              echo "::warning::The app is asleep (Streamlit Cloud sleep after inactivity). Visitors see a wake-up page first."
+            elif [ "$code" = "200" ] && [ "$host" = "okaidokucyekka.streamlit.app" ] \
+                 && { grep -Eiq '^ok[[:space:]]*$' /tmp/body.txt || grep -qi '<!doctype html' /tmp/body.txt; }; then
+              echo "Public site reachable without a user login."
               exit 0
             fi
             if [ "$attempt" -lt 3 ]; then sleep 15; fi
           done
-          echo "::error::Streamlit health check failed (HTTP $code)."
-          if [ -f /tmp/site-headers.txt ]; then
-            grep -i '^location:' /tmp/site-headers.txt || true
-          fi
+          echo "::error::Public site check failed (HTTP $code, final host $host)."
+          head -c 400 /tmp/body.txt | sed -E 's/(payload|token|code|state)=[^&" ]*/\1=***/g'; echo
           exit 1

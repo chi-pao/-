@@ -9,6 +9,8 @@ import pathlib
 import re
 import unittest
 import unicodedata
+import sys; sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
+from _app_constants import PREFECTURE_CODES  # the OCR block reads this app-level table
 
 
 class FakeStreamlit:
@@ -32,7 +34,8 @@ class OCRParserTests(unittest.TestCase):
         fake = FakeStreamlit()
         payload = json.dumps({"text": ocr_text, "nonce": 1}, ensure_ascii=False)
         env = {"st": fake, "json": json, "re": re, "unicodedata": unicodedata,
-               "datetime": datetime.datetime, "_ocr_widget": lambda **kwargs: payload}
+               "datetime": datetime.datetime, "_ocr_widget": lambda **kwargs: payload,
+               "PREFECTURE_CODES": PREFECTURE_CODES}
         exec(self.parser_code, env)
         return fake.session_state
 

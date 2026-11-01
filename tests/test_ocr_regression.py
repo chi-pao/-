@@ -7,6 +7,8 @@ import unicodedata
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
+import sys; sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
+from _app_constants import PREFECTURE_CODES  # the OCR block reads this app-level table
 
 SOURCE = Path(__file__).resolve().parents[1] / "app.py"
 tree = ast.parse(SOURCE.read_text(encoding="utf-8"), filename=str(SOURCE))
@@ -24,6 +26,7 @@ def parse(text):
     namespace = {
         "st": st, "json": json, "re": re, "unicodedata": unicodedata,
         "datetime": datetime, "_ocr_value": json.dumps({"text": text, "nonce": 1}),
+        "PREFECTURE_CODES": PREFECTURE_CODES,
     }
     exec(ocr_code, namespace)
     return st.session_state

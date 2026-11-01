@@ -2119,8 +2119,12 @@ if _ocr_value:
         _pref_pattern = "(?:" + "|".join(re.escape(name) for name in PREFECTURE_CODES) + ")"
         _address_label = re.search(r"(?:住所|所在地)[ \t:：]*([^\n\r]*)", raw)
         address_text = ""
+        # OCRは「山口 県 宇部 市」のように文字間に空白を入れることがある。
+        # 都道府県名の照合前に、漢字・かな同士の間の空白を詰める。
+        def _compact_cjk(text):
+            return re.sub(r"(?<=[一-龥ぁ-んァ-ヶ])[ \t\u3000]+(?=[一-龥ぁ-んァ-ヶ])", "", text)
         if _address_label:
-            _candidates = [_address_label.group(1)] + raw[_address_label.end():].splitlines()[:3]
+            _candidates = [_compact_cjk(_c) for _c in [_address_label.group(1)] + raw[_address_label.end():].splitlines()[:3]]
             for _candidate in _candidates:
                 _pref_match = re.search(_pref_pattern, _candidate)
                 if _pref_match:
@@ -2140,7 +2144,7 @@ if _ocr_value:
                         address_text += _part
                         break
         if not address_text:
-            _address = re.search(_pref_pattern + r"[^\n]{0,70}(?:市|区|町|村)[^\n]{0,45}", raw)
+            _address = re.search(_pref_pattern + r"[^\n]{0,70}(?:市|区|町|村)[^\n]{0,45}", _compact_cjk(raw))
             if _address:
                 address_text = _address.group().strip()
         if address_text:
@@ -3110,7 +3114,14 @@ evaluate_button = st.button(
     use_container_width=True,
 )
 
+# 結果の中の入力欄（鑑定方式の参考評価など）を操作するとStreamlitは全体を再実行し、
+# ボタンはFalseに戻る。以前はここで査定結果と広告がすべて消えていた。
+# 一度査定したら、表示を保ったまま現在の入力で描き直す。
 if evaluate_button:
+    st.session_state["evaluation_requested"] = True
+show_evaluation = evaluate_button or st.session_state.get("evaluation_requested", False)
+
+if show_evaluation:
     # 全国の売買6分類・賃貸3分類をすべて処理可能にする。
     # 未学習の分類は下のモデル読み込み時に正しく案内する。
     if get_model_key(target_type) is None:
@@ -3142,7 +3153,9 @@ if evaluate_button:
             st.warning("建物面積を入力してください。")
             st.stop()
 
-    register_usage_event("property_evaluation")
+    if evaluate_button:
+        # 利用回数はボタンを押したときだけ数える（描き直しでは数えない）。
+        register_usage_event("property_evaluation")
 
     try:
         with st.spinner("AIが参考価格を計算しています..."):

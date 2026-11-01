@@ -8,6 +8,8 @@ import re
 import unittest
 import unicodedata
 from pathlib import Path
+import sys; sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
+from _app_constants import PREFECTURE_CODES  # the OCR block reads this app-level table
 
 APP = Path(__file__).resolve().parents[1] / "app.py"
 START = '_ocr_value = _ocr_widget(key="screenshot_auto", default=None)'
@@ -39,6 +41,7 @@ def parse(text):
         "re": re,
         "unicodedata": unicodedata,
         "datetime": datetime.datetime,
+        "PREFECTURE_CODES": PREFECTURE_CODES,
     }
     exec(ocr_block, env)
     return st.session_state, st.messages

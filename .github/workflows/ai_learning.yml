@@ -1,24 +1,9 @@
 name: Real-estate AI research and safe promotion
+# Stopped 2026-11-02 (owner's decision): the checker moved to chi-pao/venture-agent-sites, whose
+# monthly self-improvement (tools/checker_train/auto_retrain.py, .github/workflows/checker-retrain.yml)
+# now trains and checks the live 中古戸建て model. This workflow only runs when started by hand.
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - 'research_adaptive.py'
-      - 'legacy_engine.py'
-      - 'mlit_updater.py'
-      - 'prepare_mlit_holdout.py'
-      - 'tests/test_mlit_data.py'
-      - 'promote_used_house.py'
-      - 'promote_used_house_cv.py'
-      - 'evaluation_policy.py'
-      - 'tests/test_promotion.py'
-      - 'tests/test_cv_promotion.py'
-      - 'export_sites_model.py'
-      - 'verify_sites_export.mjs'
-      - 'sites_model_runtime.mjs'
-      - '.github/workflows/ai_learning.yml'
-  schedule:
-    - cron: '17 2 5 * *'
 permissions:
   contents: write
 concurrency:
